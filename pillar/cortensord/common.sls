@@ -14,6 +14,11 @@ cortensord:
   # Blockchain Globals
   CONTRACT_ADDRESS_RUNTIME: "0xa438cE917a5740267e0f7217f81cbbAA23E7e106"
   CHAINID: 421614
+
+  # Router WebSocket (miners connect here)
+  # Set to the router's internal/private IP and port.
+  WS_HOST_ROUTER: "192.168.250.237"
+  WS_PORT_ROUTER: 9001
   
   # Default Installer URL
   source_url: https://github.com/cortensor/installer.git
