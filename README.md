@@ -123,6 +123,11 @@ File: `pillar/cortensord/nodes.sls`
 ### 3.1 Basic Structure
 Define generic defaults at the top level, and specific instances under `instances`.
 
+**Node Types**:
+- Ephemeral (default): no `ENABLE_DEDICATED_NODE`, no `LLM_CONTAINER_IMAGE`
+- Dedicated: `ENABLE_DEDICATED_NODE: 1`, can set `LLM_CONTAINER_IMAGE`
+- Router: `AGENT_ROLE: routerv1` (no dedicated flags)
+
 ```yaml
 cortensord:
   # --- Global Defaults (Apply to all instances) ---
@@ -133,19 +138,74 @@ cortensord:
   cortensord_nodes:
     # Miner Server 01 - Node 1
     miner-server-01-node-01:
+      NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
       NODE_PRIVATE_KEY: "0x111..."
+      # Ports must be unique per instance on the same server
       LLM_WORKER_BASE_PORT: 8090
+      LLM_GATEWAY_WORKER_BASE_PORT: 18888
       WS_PORT_ROUTER: 9001
+      # Docker / LLM Worker
+      DOCKER_LLM_MANAGER: 1
+      LLM_WORKER_PORT_PREFIX: 0
+      LLM_WORKER_CONTAINER_NAME_PREFIX: ""
+      # Dynamic Model Loading: exclude model indexes (comma-separated)
+      LLM_MEMORY_INDEX_DYNAMIC_LOADING_EXCLUDE_MODEL_INDEXES: ""
       
     # Miner Server 01 - Node 2
     miner-server-01-node-02:
+      NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
       NODE_PRIVATE_KEY: "0x222..."
       LLM_WORKER_BASE_PORT: 8091
+      LLM_GATEWAY_WORKER_BASE_PORT: 18889
       WS_PORT_ROUTER: 9002
+      DOCKER_LLM_MANAGER: 1
+      LLM_WORKER_PORT_PREFIX: 0
+      LLM_WORKER_CONTAINER_NAME_PREFIX: ""
+      LLM_MEMORY_INDEX_DYNAMIC_LOADING_EXCLUDE_MODEL_INDEXES: ""
+
+    # Miner Server 01 - Dedicated Node Example
+    miner-server-01-node-03:
+      NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
+      NODE_PRIVATE_KEY: "0x333..."
+      LLM_WORKER_BASE_PORT: 8092
+      LLM_GATEWAY_WORKER_BASE_PORT: 18890
+      WS_PORT_ROUTER: 9003
+      # Dedicated Node Configuration
+      # Set to 0 to run as an ephemeral node, 1 for dedicated node
+      ENABLE_DEDICATED_NODE: 1
+      # Dedicated nodes can pin a specific model image
+      LLM_CONTAINER_IMAGE: ""
+      # Comma-separated list of session IDs this node is authorized to serve
+      # Example: "0,1,2,3,4,5"
+      DEDICATED_NODE_AUTHORIZED_SESSIONS: "0,1,2,3,4,5"
+
+    # Miner Server 01 - Router Example
+    miner-server-01-node-router:
+      NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
+      NODE_PRIVATE_KEY: "0x444..."
+      AGENT_ROLE: routerv1
+      LLM_WORKER_BASE_PORT: 8093
+      LLM_GATEWAY_WORKER_BASE_PORT: 18891
+      WS_PORT_ROUTER: 9004
+      ROUTER_EXTERNAL_IP: "192.168.250.221"
+      ROUTER_EXTERNAL_PORT: "9001"
+      ROUTER_REST_BIND_IP: "127.0.0.1"
+      ROUTER_REST_BIND_PORT: "5010"
+      ROUTER_MCP: 0
+      ROUTER_MCP_BIND_IP: "127.0.0.1"
+      ROUTER_MCP_BIND_PORT: "8001"
+      ROUTER_MCP_SSE: 0
+      ROUTER_MCP_SSE_BIND_IP: "127.0.0.1"
+      ROUTER_MCP_SSE_BIND_PORT: "8000"
+      X402_ROUTER_NODE_ENABLE: 0
+      X402_ROUTER_NODE_NETWORK: "base-sepolia"
+      X402_ROUTER_NODE_PAY_TO: ""
+      X402_ROUTER_NODE_PRICE_DEFAULT: "0.001"
+      X402_ROUTER_NODE_PRICE_COMPLETIONS: "0.001"
 ```
 
 ### 3.2 Targeting Specific Minions
-If you have multiple physical servers (Minions), you use the `cortensord_assigned_nodes` list in each server's pillar file (`miner-server-01.sls`, `miner-server-02.sls`).
+If you have multiple physical servers (Minions), you use the `cortensord_assigned_nodes` list in each server's pillar file (`miner-server-01.sls`, `miner-server-02.sls`). For a dedicated-only host example, see `pillar/cortensord/miner-server-dedicated-01.sls`.
 
 ### 3.3 Configuration Hierarchy (Global, Server, Instance)
 
@@ -211,8 +271,45 @@ To install Cortensord and all dependencies (Docker, IPFS) on a new server for th
     ```
     **Note**: The service state requires the warmup marker file
     (`/var/lib/cortensor_warmup_done`), which is created by
-    `cortensord.warmup`. If you run pieces manually, make sure warmup
-    runs before `cortensord.service`.
+    `cortensord.warmup`. Warmup is skipped by default (`warmup_skip: true`)
+    and will only create the marker. If you run pieces manually, make sure
+    warmup (or the manual flow below) runs before `cortensord.service`.
+
+    **Manual Warmup (Single Instance)**:
+    Warmup is **skipped by default** (`warmup_skip: true`). If you want to
+    pull Docker images once and then start the rest, run a single instance
+    manually and then create the warmup marker.
+
+    1. Start only the first instance (from the minion):
+       ```bash
+       sudo systemctl stop 'cortensord@*'
+       sudo systemctl start cortensord@miner-server-01-node-01
+       sudo journalctl -u cortensord@miner-server-01-node-01 -f
+       ```
+       Or from the master:
+       ```bash
+       sudo salt 'miner-server-01' service.stop 'cortensord@*'
+       sudo salt 'miner-server-01' service.start cortensord@miner-server-01-node-01
+       sudo salt 'miner-server-01' cmd.run "journalctl -u cortensord@miner-server-01-node-01 -f"
+       ```
+    2. When images are pulled, apply warmup to create the marker:
+       ```yaml
+       # pillar/cortensord/common.sls (or miner-specific pillar)
+       cortensord:
+         warmup_skip: true
+         # Optional: wait helpers (use one)
+         # warmup_wait_seconds: 900
+         # warmup_wait_for_images:
+         #   - my-llm-image:latest
+       ```
+       ```bash
+       sudo salt 'miner-server-01' saltutil.refresh_pillar
+       sudo salt 'miner-server-01' state.apply cortensord.warmup -l info
+       ```
+    3. Start the rest:
+       ```bash
+       sudo salt 'miner-server-01' service.start 'cortensord@*'
+       ```
 
 ---
 
@@ -251,6 +348,12 @@ sudo salt 'miner-server-01' state.apply cortensord.upgrade
 *   **Restart ONE specific instance on ONE server**:
     ```bash
     sudo salt 'miner-server-01' service.restart cortensord@miner-server-01-node-01
+    ```
+
+*   **Start/Stop ONE specific instance on ONE server**:
+    ```bash
+    sudo salt 'miner-server-01' service.start cortensord@miner-server-01-node-01
+    sudo salt 'miner-server-01' service.stop cortensord@miner-server-01-node-01
     ```
 
 *   **Restart ALL instances on ONE server**:
