@@ -128,6 +128,10 @@ Define generic defaults at the top level, and specific instances under `instance
 - Dedicated: `ENABLE_DEDICATED_NODE: 1`, can set `LLM_CONTAINER_IMAGE`
 - Router: `AGENT_ROLE: routerv1` (no dedicated flags)
 
+**Router vs Miner WebSocket Settings**:
+- Miners use `WS_HOST_ROUTER` / `WS_PORT_ROUTER` to connect to the router’s internal address.
+- Router advertises its public endpoint via `ROUTER_EXTERNAL_IP` / `ROUTER_EXTERNAL_PORT`.
+
 ```yaml
 cortensord:
   # --- Global Defaults (Apply to all instances) ---
@@ -167,8 +171,8 @@ cortensord:
     miner-server-01-node-03:
       NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
       NODE_PRIVATE_KEY: "0x333..."
-      LLM_WORKER_BASE_PORT: 8092
-      LLM_GATEWAY_WORKER_BASE_PORT: 18890
+      LLM_HOST: "127.0.0.1"
+      LLM_PORT: "8090"
       WS_PORT_ROUTER: 9003
       # Dedicated Node Configuration
       # Set to 0 to run as an ephemeral node, 1 for dedicated node

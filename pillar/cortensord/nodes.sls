@@ -18,8 +18,9 @@
 # --- Networking ---
 # LLM_WORKER_BASE_PORT: 8090            (unique per instance on the same server)
 # LLM_GATEWAY_WORKER_BASE_PORT: 18888   (unique per instance on the same server)
-# WS_PORT_ROUTER:       9001
-# WS_HOST_ROUTER:       "192.168.250.237"
+# WS_HOST_ROUTER:       "192.168.250.237"  (miners connect to router internal IP)
+# WS_PORT_ROUTER:       9001              (miners connect to router internal port)
+# ROUTER_EXTERNAL_IP/PORT are set on router nodes only (public-facing)
 #
 # --- Agent Role ---
 # AGENT_ROLE:           "minerv1" (or "routerv1", "validatorv2")
@@ -161,8 +162,8 @@ cortensord_nodes:
   miner-server-dedicated-01-node-01:
     NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
     NODE_PRIVATE_KEY: "0xDDD...111"
-    LLM_WORKER_BASE_PORT: 8090
-    LLM_GATEWAY_WORKER_BASE_PORT: 18888
+    LLM_HOST: "127.0.0.1"
+    LLM_PORT: "8090"
     WS_PORT_ROUTER: 9001
     DOCKER_LLM_MANAGER: 1
     LLM_WORKER_PORT_PREFIX: 0
