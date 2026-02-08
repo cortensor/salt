@@ -6,6 +6,11 @@ cortensord:
   group: deploy
   home_dir: /home/deploy
 
+  # Directory Configuration
+  nodes_dir: /opt/cortensor/nodes
+  log_dir: /var/log/cortensor
+  installer_dir: /opt/cortensor-installer
+
   # Blockchain Globals
   CONTRACT_ADDRESS_RUNTIME: "0xa438cE917a5740267e0f7217f81cbbAA23E7e106"
   CHAINID: 421614

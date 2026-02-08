@@ -5,8 +5,8 @@ base:
     - cortensord.nodes  # Everyone gets the full registry (it's safe, they only run what is assigned)
 
   # 2. Apply Server-Specific Configurations (Nodes, Overrides)
-  'minion-id-01':
-    - cortensord.server_a
+  'miner-server-01':
+    - cortensord.miner-server-01
 
-  'minion-id-02':
-    - cortensord.server_b
+  'miner-server-02':
+    - cortensord.miner-server-02

@@ -2,7 +2,7 @@
 # Cortensor Node Registry
 # ==============================================================================
 # This file defines the configuration for EVERY node in the fleet.
-# Determining WHICH server runs WHICH node is done in `pillar/cortensord/server_*.sls`.
+# Determining WHICH server runs WHICH node is done in `pillar/cortensord/miner-server-*.sls`.
 #
 # Available Variables (and their defaults):
 #
@@ -36,52 +36,52 @@
 # ==============================================================================
 
 cortensord_nodes:
-  # --- Server A Nodes ---
-  server_a_node_01:
+  # --- Miner Server 01 Nodes ---
+  miner-server-01-node-01:
     NODE_PRIVATE_KEY: "0xAAA...111"
     LLM_WORKER_BASE_PORT: 8090
     WS_PORT_ROUTER: 9001
     
-  server_a_node_02:
+  miner-server-01-node-02:
     NODE_PRIVATE_KEY: "0xAAA...222"
     LLM_WORKER_BASE_PORT: 8091
     WS_PORT_ROUTER: 9002
     LLM_OPTION_GPU: 1
     
-  server_a_node_03:
+  miner-server-01-node-03:
     NODE_PRIVATE_KEY: "0xAAA...333"
     LLM_WORKER_BASE_PORT: 8092
     WS_PORT_ROUTER: 9003
     ENABLE_DEDICATED_NODE: 1
     DEDICATED_NODE_AUTHORIZED_SESSIONS: "10,11,12"
     
-  server_a_node_04:
+  miner-server-01-node-04:
     NODE_PRIVATE_KEY: "0xAAA...444"
     LLM_WORKER_BASE_PORT: 8093
     WS_PORT_ROUTER: 9004
     LLM_OPTION_CPU_THREADS: 16
 
-  # --- Server B Nodes ---
-  server_b_node_router:
+  # --- Miner Server 02 Nodes ---
+  miner-server-02-node-router:
     NODE_PRIVATE_KEY: "0xBBB...111"
     AGENT_ROLE: routerv1
     LLM_WORKER_BASE_PORT: 8090
     WS_PORT_ROUTER: 9001
     
-  server_b_node_miner:
+  miner-server-02-node-miner:
     NODE_PRIVATE_KEY: "0xBBB...222"
     AGENT_ROLE: minerv4
     LLM_WORKER_BASE_PORT: 8091
     WS_PORT_ROUTER: 9002
     
-  server_b_node_deepseek:
+  miner-server-02-node-deepseek:
     NODE_PRIVATE_KEY: "0xBBB...333"
     LLM_WORKER_BASE_PORT: 8092
     WS_PORT_ROUTER: 9003
     LLM_CONTAINER_IMAGE: "deepseek-r1:8b-gpu"
     AGENT_MINER_DOCKER_LLM: 1
     
-  server_b_node_l3:
+  miner-server-02-node-l3:
     NODE_PRIVATE_KEY: "0xBBB...444"
     LLM_WORKER_BASE_PORT: 8093
     WS_PORT_ROUTER: 9004

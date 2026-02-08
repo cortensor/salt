@@ -1,0 +1,7 @@
+
+# List of nodes assigned to this server
+cortensord_assigned_nodes:
+  - miner-server-02-node-router
+  - miner-server-02-node-miner
+  - miner-server-02-node-deepseek
+  - miner-server-02-node-l3
