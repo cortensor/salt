@@ -9,6 +9,7 @@
 
 include:
   - .install
+  - .unit
 
 # Create base directory for nodes
 {{ nodes_dir }}:
@@ -34,6 +35,7 @@ include:
 
 {# Iterate through ASSIGNED nodes #}
 {% for instance_name in assigned_nodes %}
+    {% set env_file_name = '.env-' ~ instance_name %}
 
     {# Look up instance config from Registry #}
     {% set instance_config = node_registry.get(instance_name, {}) %}
@@ -66,7 +68,7 @@ include:
     - require:
       - file: {{ nodes_dir }}
 
-{{ nodes_dir }}/{{ instance_name }}/.env:
+{{ nodes_dir }}/{{ instance_name }}/{{ env_file_name }}:
   file.managed:
     - source: salt://cortensord/files/cortensord.env.j2
     - template: jinja
@@ -77,5 +79,12 @@ include:
         config: {{ final_config }}
     - require:
       - file: {{ nodes_dir }}/{{ instance_name }}
+
+{{ nodes_dir }}/{{ instance_name }}/.env:
+  file.symlink:
+    - target: {{ nodes_dir }}/{{ instance_name }}/{{ env_file_name }}
+    - force: True
+    - require:
+      - file: {{ nodes_dir }}/{{ instance_name }}/{{ env_file_name }}
 
 {% endfor %}

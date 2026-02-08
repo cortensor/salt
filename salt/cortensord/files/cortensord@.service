@@ -33,9 +33,10 @@ StandardOutput=append:{{ log_dir }}/cortensord-%i.log
 StandardError=append:{{ log_dir }}/cortensord-%i.log
 
 # Command
-# Note: ${AGENT_ROLE} is pulled from the EnvironmentFile loaded above
+# Note: ${AGENT_ROLE} is pulled from the EnvironmentFile loaded above.
+# Use an instance-specific env filename for easier process debugging.
 # '1' and 'docker' are kept as defaults from the example, but could be templated if needed.
-ExecStart=/usr/local/bin/cortensord .env ${AGENT_ROLE} 1 docker
+ExecStart=/usr/local/bin/cortensord .env-%i ${AGENT_ROLE} 1 docker
 
 Restart=on-failure
 RestartSec=10
