@@ -14,8 +14,10 @@ On your management server (Master):
 
 1.  **Install Salt Master**:
     ```bash
-    curl -L https://bootstrap.saltproject.io | sudo sh -s -- -M
+    curl -o bootstrap-salt.sh -L https://raw.githubusercontent.com/saltstack/salt-bootstrap/develop/bootstrap-salt.sh
+    sudo sh bootstrap-salt.sh -P -M
     ```
+    *` -P` enables pip installation support if needed, `-M` installs Master.*
 2.  **Configure File Roots**:
     Edit `/etc/salt/master` to point to this repository.
     ```yaml
@@ -54,14 +56,20 @@ For each new server you want to add to the cluster:
 
 2.  **Install Salt Minion**:
     ```bash
-    curl -L https://bootstrap.saltproject.io | sudo sh
+    curl -o bootstrap-salt.sh -L https://raw.githubusercontent.com/saltstack/salt-bootstrap/develop/bootstrap-salt.sh
+    sudo sh bootstrap-salt.sh -P
     ```
-2.  **Point to Master**:
-    Edit `/etc/salt/minion` or create `/etc/salt/minion.d/master.conf`:
-    ```yaml
-    master: <IP_OF_SALT_MASTER>
-    id: <UNIQUE_SERVER_ID>  # e.g., miner-server-01
-    ```
+    2.  **Point to Master**:
+3.      Edit `/etc/salt/minion` or create `/etc/salt/minion.d/master.conf`:
+4.      ```yaml
+5.      master: <IP_OF_SALT_MASTER>
+6.      ```
+7.      **Set Minion ID**:
+8.      Write the unique server name to `/etc/salt/minion_id` (Preferred):
+9.      ```bash
+10.      echo "miner-server-01" | sudo tee /etc/salt/minion_id
+11.      ```
+12.      *Alternatively, set `id: miner-server-01` in `/etc/salt/minion` config.*
 3.  **Restart Minion**:
     ```bash
     systemctl restart salt-minion
@@ -87,40 +95,23 @@ cortensord:
   CONTRACT_ADDRESS_RUNTIME: "0xa43..."
   CHAINID: 421614
   
-  # --- Instance Definitions ---
-  instances:
-    # First Instance
-    node_01:
+  # --- Instance Definitions (Registry) ---
+  cortensord_nodes:
+    # Server A - Node 1
+    server_a_node_01:
       NODE_PRIVATE_KEY: "0x111..."
       LLM_WORKER_BASE_PORT: 8090
       WS_PORT_ROUTER: 9001
       
-    # Second Instance
-    node_02:
+    # Server A - Node 2
+    server_a_node_02:
       NODE_PRIVATE_KEY: "0x222..."
-      LLM_WORKER_BASE_PORT: 8091  # Must affect port to avoid conflict
+      LLM_WORKER_BASE_PORT: 8091
       WS_PORT_ROUTER: 9002
 ```
 
 ### 3.2 Targeting Specific Minions
-If you have multiple physical servers (Minions) and they need different configurations, you can use Salt's `top.sls` or `match` inside the pillar.
-However, often simpler is to have a pillar file per minion or use map files. 
-
-For a simple setup, you can check the minion ID in the pillar:
-
-```yaml
-cortensord:
-  instances:
-    {% if grains['id'] == 'miner-server-01' %}
-    node_01:
-      ...
-    node_02:
-      ...
-    {% elif grains['id'] == 'miner-server-02' %}
-    node_03:
-      ...
-    {% endif %}
-```
+If you have multiple physical servers (Minions), you use the `cortensord_assigned_nodes` list in each server's pillar file (`server_a.sls`, `server_b.sls`).
 
 ### 3.3 Configuration Hierarchy (Global, Server, Instance)
 
@@ -133,113 +124,115 @@ You can override variables at different levels. The most specific one wins (Inst
       # Optional: Override global settings for this server
       CHAINID: 9999
     
-    cortensord_assigned_nodes: ...
+    cortensord_assigned_nodes:
+        - server_a_node_01
     ```
 
 2.  **Instance Updates**:
-    To change `CHAINID` for a *single node* (e.g., `node_01`), edit `pillar/cortensord/nodes.sls`:
+    To change `CHAINID` for a *single node*, edit `pillar/cortensord/nodes.sls`:
     ```yaml
     cortensord_nodes:
-      node_01:
+      server_a_node_01:
         CHAINID: 5555
     ```
-
-```yaml
-cortensord:
-  instances:
-    node_test_01:
-      # Override Global Contract for this single node
-      CONTRACT_ADDRESS_RUNTIME: "0x123...DevNet"
-      CHAINID: 999999
-      NODE_PRIVATE_KEY: "..."
-```
 
 ## 4. Operations Manual
 
 This section covers all day-to-day operations for managing the fleet.
 
 ### 4.1 Deployment & Installation
-To install Cortensord and all dependencies (Docker, IPFS) on new or existing servers:
+**Initial Setup (Per Minion)**:
+To install Cortensord and all dependencies (Docker, IPFS) on a new server for the first time:
 
 1.  **Configure Pillar**: Ensure `nodes.sls` and `server_*.sls` are set up.
 2.  **Run Install**:
     ```bash
     salt '*' state.apply cortensord
     ```
-    *This creates users, installs binaries, generates .env files, and starts services.*
+    *This creates users, installs binaries, generates .env files, downloads Docker images (Warmup), and starts services.*
 
-### 4.2 Upgrading
-To upgrade the `cortensord` binary to the latest version from the repo:
+---
 
-1.  **Run Upgrade**:
-    ```bash
-    salt '*' state.apply cortensord.upgrade
-    ```
-    *This fetches the latest code, recompiles/installs the binary, and restarts all services.*
+### 4.2 Routine Operations
 
-### 4.3 Configuration Updates
-To update configuration (e.g., change keys, ports, or toggles):
+### 4.2 Routine Operations
 
-1.  **Edit Pillar**: Modify `nodes.sls` or `server_*.sls`.
-2.  **Apply Changes**:
-    ```bash
-    salt '*' state.apply cortensord
-    ```
-    *This regenerates `.env` files and restarts services if the config changed.*
+**Configuration Updates**:
+To apply changes to **ALL servers**:
+```bash
+salt '*' state.apply cortensord
+```
+To apply changes to **ONE specific server** (e.g., `server-a`):
+```bash
+salt 'server-a' state.apply cortensord
+```
 
-### 4.4 Service Management
-Managing individual nodes via Systemd (from the Master).
+**Binary Upgrades**:
+To upgrade `cortensord` binary on **ALL servers**:
+```bash
+salt '*' state.apply cortensord.upgrade
+```
+To upgrade on **ONE specific server**:
+```bash
+salt 'server-a' state.apply cortensord.upgrade
+```
 
--   **Check Status**:
+**Service Management**:
+
+*   **Restart ONE specific instance on ONE server**:
     ```bash
-    salt '*' service.status cortensord@node_01
-    ```
--   **Restart a Node**:
-    ```bash
-    salt '*' service.restart cortensord@node_01
-    ```
--   **Stop a Node**:
-    ```bash
-    salt '*' service.stop cortensord@node_01
-    ```
--   **Start a Node**:
-    ```bash
-    salt '*' service.start cortensord@node_01
+    salt 'server_a' service.restart cortensord@server_a_node_01
     ```
 
-### 4.5 Troubleshooting
-
-#### Generic Troubleshooting
--   **Verify Connectivity**: `salt '*' test.ping`
--   **Check Pillar Data**: `salt '*' pillar.items` (Verify the minion sees the correct config)
-
-#### Logs
-Logs are stored on the **Minion** (the server running the node).
-
--   **System Logs (Systemd)**:
+*   **Restart ALL instances on ONE server**:
     ```bash
-    # Run on Minion
-    journalctl -u cortensord@node_01 -f
+    salt 'server_a' service.restart 'cortensord@*'
     ```
--   **Application Logs**:
-    Located at: `/var/log/cortensor/`
-    -   `cortensord-<node_name>.log`
-    -   `cortensord-llm-<node_name>.log`
 
-#### Common Issues
-1.  **Service Fails to Start**:
-    -   Check permissions: `ls -la /opt/cortensor/nodes`
-    -   Check specific error: `journalctl -u cortensord@node_01 -n 50`
-2.  **IPFS Conflicts**:
-    -   Only ONE node per server should have `ENABLE_IPFS_SERVER=1`. Use `salt/cortensord/config.sls` logic to ensure this (automatically handled).
+*   **Restart ONE instance across ALL servers** (e.g. if `node_router` is deployed everywhere):
+    ```bash
+    salt '*' service.restart cortensord@node_router
+    ```
 
-## 5. Architecture & Best Practices
+### 4.3 Troubleshooting & Logs
 
-### Why Systemd?
-We strongly recommend using `systemctl` (Systemd) over manual `nohup`, `screen`, or background scripts for production nodes. This SaltStack setup uses Systemd for:
-1.  **Auto-Restart**: If the process crashes or the server reboots, Systemd automatically brings it back up.
-2.  **Logging**: `journalctl` and standard logs are handled cleanly without manual redirection.
-3.  **Resource Limits**: We enforce file descriptor limits (`LimitNOFILE=1000000`) at the service level.
-4.  **Consistency**: All instances (`node_01`, `node_02`) are managed identically.
+**View Logs (System)**:
+```bash
+journalctl -u cortensord@server_a_node_01 -f
+```
 
-⚠️ **Note**: The installer places manual scripts like `start-cortensor.sh` in `.cortensor/bin`. **Do not use these** for production; they will bypass Systemd and you lose auto-restart capabilities.
+**View Logs (App)**:
+```bash
+tail -f /var/log/cortensor/cortensord-server_a_node_01.log
+```
+
+### 4.4 Command Cheat Sheet (Useful)
+
+#### Master Commands (Run on Salt Master)
+| Action | Command |
+| :--- | :--- |
+| **List Minions** | `salt-key -L` |
+| **Accept Keys** | `salt-key -A` |
+| **Ping Minions** | `salt '*' test.ping` |
+| **Apply State** | `salt '*' state.apply cortensord` |
+| **Upgrade Binary** | `salt '*' state.apply cortensord.upgrade` |
+| **Restart Node** | `salt '*' service.restart cortensord@server_a_node_01` |
+
+#### Targeting
+-   **Single Server**: `salt 'server-a' ...`
+-   **List**: `salt -L 'server-a,server-b' ...`
+
+### 4.5 Decommissioning & Key Management
+
+**Revoke/Remove a Minion**:
+If you decommission a server or need to re-key it:
+1.  **Stop Minion service** on the old server (if still live):
+    ```bash
+    ssh user@server-a 'sudo systemctl stop salt-minion'
+    ```
+2.  **Delete Key** on Master:
+    ```bash
+    salt-key -d 'server-a'
+    # Press 'y' to confirm
+    ```
+    *This revokes the server's access. It will need to re-register to connect again.*

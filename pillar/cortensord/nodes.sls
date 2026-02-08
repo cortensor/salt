@@ -37,51 +37,51 @@
 
 cortensord_nodes:
   # --- Server A Nodes ---
-  node_01:
+  server_a_node_01:
     NODE_PRIVATE_KEY: "0xAAA...111"
     LLM_WORKER_BASE_PORT: 8090
     WS_PORT_ROUTER: 9001
     
-  node_02:
+  server_a_node_02:
     NODE_PRIVATE_KEY: "0xAAA...222"
     LLM_WORKER_BASE_PORT: 8091
     WS_PORT_ROUTER: 9002
     LLM_OPTION_GPU: 1
     
-  node_03:
+  server_a_node_03:
     NODE_PRIVATE_KEY: "0xAAA...333"
     LLM_WORKER_BASE_PORT: 8092
     WS_PORT_ROUTER: 9003
     ENABLE_DEDICATED_NODE: 1
     DEDICATED_NODE_AUTHORIZED_SESSIONS: "10,11,12"
     
-  node_04:
+  server_a_node_04:
     NODE_PRIVATE_KEY: "0xAAA...444"
     LLM_WORKER_BASE_PORT: 8093
     WS_PORT_ROUTER: 9004
     LLM_OPTION_CPU_THREADS: 16
 
   # --- Server B Nodes ---
-  node_router_01:
+  server_b_node_router:
     NODE_PRIVATE_KEY: "0xBBB...111"
     AGENT_ROLE: routerv1
     LLM_WORKER_BASE_PORT: 8090
     WS_PORT_ROUTER: 9001
     
-  node_miner_01:
+  server_b_node_miner:
     NODE_PRIVATE_KEY: "0xBBB...222"
     AGENT_ROLE: minerv4
     LLM_WORKER_BASE_PORT: 8091
     WS_PORT_ROUTER: 9002
     
-  node_deepseek:
+  server_b_node_deepseek:
     NODE_PRIVATE_KEY: "0xBBB...333"
     LLM_WORKER_BASE_PORT: 8092
     WS_PORT_ROUTER: 9003
     LLM_CONTAINER_IMAGE: "deepseek-r1:8b-gpu"
     AGENT_MINER_DOCKER_LLM: 1
     
-  node_l3_01:
+  server_b_node_l3:
     NODE_PRIVATE_KEY: "0xBBB...444"
     LLM_WORKER_BASE_PORT: 8093
     WS_PORT_ROUTER: 9004
