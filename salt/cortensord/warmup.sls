@@ -2,9 +2,16 @@
 {% set config = pillar.get('cortensord', {}) %}
 {% set user = config.get('user', 'cortensor') %}
 {% set home_dir = config.get('home_dir', '/home/' ~ user) %}
-{% set cortensor_bin = home_dir ~ '/.cortensor/bin' %}
+{% set nodes_dir = config.get('nodes_dir', '/opt/cortensor/nodes') %}
 {# Set `cortensord:warmup_skip: true` in pillar to skip warmup if done manually #}
 {% set warmup_skip = config.get('warmup_skip', False) %}
+{# Optional wait controls for warmup #}
+{% set warmup_wait_seconds = config.get('warmup_wait_seconds', 0) %}
+{% set warmup_wait_timeout = config.get('warmup_wait_timeout', 1800) %}
+{% set warmup_wait_for_images = config.get('warmup_wait_for_images', []) %}
+{% if warmup_wait_for_images is string %}
+  {% set warmup_wait_for_images = [warmup_wait_for_images] %}
+{% endif %}
 
 # Only run warmup if there is at least one node assigned
 {% if assigned_nodes|length > 0 %}
@@ -15,6 +22,7 @@
     include:
       - .install
       - .config
+      - .unit
 
     {% if warmup_skip %}
     warmup_skipped_marker:
@@ -23,32 +31,47 @@
         - contents: "Warmup skipped on {{ None|strftime('%Y-%m-%d %H:%M:%S') }} (manual run)"
         - replace: False
     {% else %}
-    # Run warmup using the first node's environment
-    # This pulls necessary Docker images which are then available to ALL nodes
-    cortensord_warmup_shared:
-      cmd.run:
-        - name: {{ cortensor_bin }}/cortensord --warmup
-        # Use the .env of the first node so it knows WHICH images to pull (e.g. if custom model)
-        - env:
-          - HOME: {{ home_dir }}
-        - runas: {{ user }}
-        # We need to source the env file to get variables like LLM_CONTAINER_IMAGE
-        - prepend_path: {{ cortensor_bin }}
-        - shell: /bin/bash
-        # Just use the .env we generated
-        - env_file: /opt/cortensor/nodes/{{ first_node }}/.env
+    # Start only the first instance to pull Docker images (shared by all nodes)
+    cortensord_warmup_instance:
+      service.running:
+        - name: cortensord@{{ first_node }}
+        - enable: True
         - require:
-            - file: install_binary
-            - file: /opt/cortensor/nodes/{{ first_node }}/.env
-        # Create a marker file so we don't re-run this every single time state applies
-        - unless: test -f /var/lib/cortensor_warmup_done
+            - file: /etc/systemd/system/cortensord@.service
+            - file: {{ nodes_dir }}/{{ first_node }}/.env
+        - watch:
+            - file: {{ nodes_dir }}/{{ first_node }}/.env
+
+    # Optional wait for images or a fixed delay before marking warmup done
+    cortensord_warmup_wait:
+      cmd.run:
+        - name: |
+            /bin/bash -lc 'set -euo pipefail
+            source "{{ nodes_dir }}/{{ first_node }}/.env" || true
+            IMAGES=({{ warmup_wait_for_images | join(" ") }})
+            if [ ${#IMAGES[@]} -eq 0 ] && [ -n "${LLM_CONTAINER_IMAGE:-}" ]; then
+              IMAGES=("$LLM_CONTAINER_IMAGE")
+            fi
+            if [ ${#IMAGES[@]} -gt 0 ]; then
+              for img in "${IMAGES[@]}"; do
+                echo "Waiting for Docker image: $img"
+                timeout {{ warmup_wait_timeout }} bash -lc "until docker image inspect \"$img\" >/dev/null 2>&1; do sleep 5; done"
+              done
+            elif [ {{ warmup_wait_seconds }} -gt 0 ]; then
+              echo "No image list configured; sleeping {{ warmup_wait_seconds }}s"
+              sleep {{ warmup_wait_seconds }}
+            else
+              echo "No warmup wait configured; continuing"
+            fi'
+        - require:
+            - service: cortensord_warmup_instance
 
     mark_warmup_done:
       file.managed:
         - name: /var/lib/cortensor_warmup_done
         - contents: "Warmup completed on {{ None|strftime('%Y-%m-%d %H:%M:%S') }}"
         - require:
-            - cmd: cortensord_warmup_shared
+            - cmd: cortensord_warmup_wait
     {% endif %}
 
 {% endif %}

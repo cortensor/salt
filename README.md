@@ -216,7 +216,8 @@ To install Cortensord and all dependencies (Docker, IPFS) on a new server for th
 
     **Manual Warmup (Single Instance)**:
     Use this if you want to start only one instance to pull Docker images,
-    then let the rest start later.
+    then let the rest start later. By default `cortensord.warmup` starts the
+    first instance and can optionally wait before creating the warmup marker.
 
     1. Start only the first instance:
        ```bash
@@ -230,6 +231,10 @@ To install Cortensord and all dependencies (Docker, IPFS) on a new server for th
        # pillar/cortensord/common.sls (or miner-specific pillar)
        cortensord:
          warmup_skip: true
+         # Optional: wait helpers (use one)
+         # warmup_wait_seconds: 900
+         # warmup_wait_for_images:
+         #   - my-llm-image:latest
        ```
        ```bash
        sudo salt 'miner-server-01' saltutil.refresh_pillar
