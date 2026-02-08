@@ -59,26 +59,31 @@ For each new server you want to add to the cluster:
     curl -o bootstrap-salt.sh -L https://raw.githubusercontent.com/saltstack/salt-bootstrap/develop/bootstrap-salt.sh
     sudo sh bootstrap-salt.sh -P
     ```
-    2.  **Point to Master**:
-3.      Edit `/etc/salt/minion` or create `/etc/salt/minion.d/master.conf`:
-4.      ```yaml
-5.      master: <IP_OF_SALT_MASTER>
-6.      ```
-7.      **Set Minion ID**:
-8.      Write the unique server name to `/etc/salt/minion_id` (Preferred):
-9.      ```bash
-10.      echo "miner-server-01" | sudo tee /etc/salt/minion_id
-11.      ```
-12.      *Alternatively, set `id: miner-server-01` in `/etc/salt/minion` config.*
-3.  **Restart Minion**:
+
+3.  **Point to Master**:
+    Edit `/etc/salt/minion` or create `/etc/salt/minion.d/master.conf`:
+    ```yaml
+    master: <IP_OF_SALT_MASTER>
+    ```
+
+4.  **Set Minion ID**:
+    Write the unique server name to `/etc/salt/minion_id` (Preferred):
+    ```bash
+    echo "miner-server-01" | sudo tee /etc/salt/minion_id
+    ```
+    *Alternatively, set `id: miner-server-01` in `/etc/salt/minion` config.*
+
+5.  **Restart Minion**:
     ```bash
     systemctl restart salt-minion
     ```
-4.  **Accept Key on Master**:
+
+6.  **Accept Key on Master**:
     On the Master server:
     ```bash
     salt-key -A  # Accept all pending keys
     ```
+
 
 ## 3. Configuring Cortensord Instances
 
