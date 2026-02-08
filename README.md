@@ -209,6 +209,10 @@ To install Cortensord and all dependencies (Docker, IPFS) on a new server for th
     # 3. Install Cortensord (Application & Config)
     sudo salt '*' state.apply cortensord
     ```
+    **Note**: The service state requires the warmup marker file
+    (`/var/lib/cortensor_warmup_done`), which is created by
+    `cortensord.warmup`. If you run pieces manually, make sure warmup
+    runs before `cortensord.service`.
 
 ---
 
