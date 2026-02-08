@@ -77,13 +77,13 @@ For each new server you want to add to the cluster:
     ```
     *Alternatively, set `id: miner-server-01` in `/etc/salt/minion` config.*
 
-    > **Important**: This ID (`miner-server-01`) must match the entry in your `pillar/top.sls` file on the Master. This is how Salt knows which `miner-server-*.sls` configuration to apply to this specific machine.
+    > **Important**: This ID (`miner-server-01`) must match the entry in your `pillar/top.sls` file on the Master. This is how Salt knows which `servers/*.sls` configuration to apply to this specific machine.
     >
     > **Example `pillar/top.sls`**:
     > ```yaml
     > base:
     >   'miner-server-01':  # Matches the minion_id
-    >     - cortensord.miner-server-01
+    >     - cortensord.servers.miner-server-01
     > ```
 
 5.  **Restart Minion**:
@@ -119,6 +119,8 @@ For each new server you want to add to the cluster:
 The configuration is driven by **Pillar** data. You define global settings and per-instance overrides.
 
 File: `pillar/cortensord/instances/nodes.sls`
+
+Instances live under `pillar/cortensord/instances/` and server assignments live under `pillar/cortensord/servers/`.
 
 ### 3.1 Basic Structure
 Define generic defaults at the top level, and specific instances under `instances/` by type.
@@ -233,7 +235,7 @@ This section covers all day-to-day operations for managing the fleet.
 **Initial Setup (Per Minion)**:
 To install Cortensord and all dependencies (Docker, IPFS) on a new server for the first time:
 
-1.  **Configure Pillar**: Ensure `nodes.sls` and `miner-server-*.sls` are set up.
+1.  **Configure Pillar**: Ensure `instances/*.sls` and `servers/*.sls` are set up, and `pillar/top.sls` targets your minion IDs.
 2.  **Run Install**:
     
     *   **Install on ALL Servers**:
@@ -250,7 +252,7 @@ To install Cortensord and all dependencies (Docker, IPFS) on a new server for th
         # ... verify ...
         sudo salt 'miner-server-02' state.apply cortensord
         ```
-    *This creates users, installs binaries, generates .env files, downloads Docker images (Warmup), and starts services.*
+    *This creates users, installs binaries, generates .env files, and starts services. Warmup is optional and skipped by default.*
 
     **Granular Execution (Component by Component)**:
     If you prefer to install dependencies separately first:
@@ -283,7 +285,7 @@ To install Cortensord and all dependencies (Docker, IPFS) on a new server for th
        ```
        Or from the master:
        ```bash
-       sudo salt 'miner-server-01' service.stop 'cortensord@*'
+       sudo salt 'miner-server-01' cmd.run "systemctl stop 'cortensord@*'"
        sudo salt 'miner-server-01' service.start cortensord@miner-server-01-node-01
        sudo salt 'miner-server-01' cmd.run "journalctl -u cortensord@miner-server-01-node-01 -f"
        ```
@@ -337,6 +339,7 @@ To upgrade on **ONE specific server**:
 ```bash
 sudo salt 'miner-server-01' state.apply cortensord.upgrade
 ```
+The upgrade state stops all assigned instances, updates the binary, and starts them again.
 
 **Service Management**:
 
@@ -390,6 +393,14 @@ journalctl -u cortensord@miner-server-01-node-01 -f
 tail -f /var/log/cortensor/cortensord-miner-server-01-node-01.log
 ```
 
+**Process Debug (Env File Name)**:
+Systemd runs `cortensord` with an instance‑specific env file:
+`/opt/cortensor/nodes/<instance>/.env-<instance>` (with a `.env` symlink for compatibility).
+This shows up in `ps` for easier debugging:
+```bash
+ps agx | grep cortensord
+```
+
 **Common Errors**:
 
 *   **"Minion did not return. [No response]"**
@@ -411,7 +422,7 @@ tail -f /var/log/cortensor/cortensord-miner-server-01-node-01.log
     # 1. Install Binary & Users
     sudo salt 'miner-server-01' state.apply cortensord.install -l info
     
-    # 2. Generate Configs (.env)
+    # 2. Generate Configs (.env) and refresh systemd unit
     sudo salt 'miner-server-01' state.apply cortensord.config -l info
     
     # 3. Pull Docker Images (Warmup)
