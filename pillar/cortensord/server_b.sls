@@ -1,7 +1,7 @@
 
 # List of nodes assigned to this server
 cortensord_assigned_nodes:
-  - node_router_01
-  - node_miner_01
-  - node_deepseek
-  - node_l3_01
+  - server_b_node_router
+  - server_b_node_miner
+  - server_b_node_deepseek
+  - server_b_node_l3

@@ -12,3 +12,13 @@ cortensord:
   
   # Default Installer URL
   source_url: https://github.com/cortensor/installer.git
+
+  # --- Dependencies Configuration ---
+  
+  # IPFS Configuration
+  ipfs_version: "v0.33.0"
+  
+  # Docker Configuration
+  # Base URL for Docker repo (useful for mirrors or air-gapped environments)
+  # Dynamic part (os/arch) will be appended by the state logic
+  docker_base_url: "https://download.docker.com/linux"

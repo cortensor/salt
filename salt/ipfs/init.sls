@@ -1,12 +1,16 @@
-{% set ipfs_version = 'v0.33.0' %}
+{% set config = pillar.get('cortensord', {}) %}
+{% set ipfs_version = config.get('ipfs_version', 'v0.33.0') %}
 {% set ipfs_pkg = 'kubo_' ~ ipfs_version ~ '_linux-amd64.tar.gz' %}
-{% set ipfs_url = 'https://github.com/ipfs/kubo/releases/download/' ~ ipfs_version ~ '/' ~ ipfs_pkg %}
+
+# Allow overriding the full download URL if needed (e.g. internal mirror)
+{% set default_url = 'https://github.com/ipfs/kubo/releases/download/' ~ ipfs_version ~ '/' ~ ipfs_pkg %}
+{% set ipfs_url = config.get('ipfs_download_url', default_url) %}
 
 ipfs_download:
   file.managed:
     - name: /opt/{{ ipfs_pkg }}
     - source: {{ ipfs_url }}
-    - skip_verify: True  # For speed/simplicity, hash should ideally be added
+    - skip_verify: True
     - mode: 644
 
 ipfs_extract:
@@ -17,6 +21,7 @@ ipfs_extract:
     - require:
       - file: ipfs_download
 
+# The extracted folder is usually 'kubo'
 ipfs_install:
   cmd.run:
     - name: ./install.sh
