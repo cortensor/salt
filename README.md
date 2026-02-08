@@ -71,8 +71,6 @@ For each new server you want to add to the cluster:
     ```bash
     echo "miner-server-01" | sudo tee /etc/salt/minion_id
     ```
-    echo "miner-server-01" | sudo tee /etc/salt/minion_id
-    ```
     *Alternatively, set `id: miner-server-01` in `/etc/salt/minion` config.*
 
     > **Important**: This ID (`miner-server-01`) must match the entry in your `pillar/top.sls` file on the Master. This is how Salt knows which `server_*.sls` configuration to apply to this specific machine.
