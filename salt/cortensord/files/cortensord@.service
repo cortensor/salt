@@ -1,0 +1,48 @@
+[Unit]
+Description=Cortensor Daemon %i
+Documentation=https://docs.cortensor.network
+After=network.target
+
+[Service]
+# To run on well-known ports below 1024, you might need capabilities
+# AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+# User/Group
+User={{ user }}
+Group={{ group }}
+
+# Directories
+StateDirectory=cortensor
+WorkingDirectory=/opt/cortensor/nodes/%i
+Environment=CORTENSOR_PATH="/opt/cortensor/nodes/%i"
+EnvironmentFile=/opt/cortensor/nodes/%i/.env
+
+# Paths
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:{{ home_dir }}/.cortensor/bin
+
+# Resource Limits
+LimitNOFILE=1000000
+MemorySwapMax=0
+
+# Startup Management
+TimeoutStartSec=infinity
+Type=simple
+
+# Logging (Unique per instance)
+StandardOutput=append:/var/log/cortensor/cortensord-%i.log
+StandardError=append:/var/log/cortensor/cortensord-%i.log
+
+# Command
+# Note: ${AGENT_ROLE} is pulled from the EnvironmentFile loaded above
+# '1' and 'docker' are kept as defaults from the example, but could be templated if needed.
+ExecStart=/usr/local/bin/cortensord .env ${AGENT_ROLE} 1 docker
+
+Restart=on-failure
+RestartSec=10
+KillSignal=SIGINT
+
+# Restart cortensord periodically
+# RuntimeMaxSec=43200
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,74 @@
+{% set global_config = pillar.get('cortensord', {}) %}
+{% set user = global_config.get('user', 'cortensor') %}
+{% set group = global_config.get('group', 'cortensor') %}
+
+{% set node_registry = pillar.get('cortensord_nodes', {}) %}
+{% set assigned_nodes = pillar.get('cortensord_assigned_nodes', []) %}
+
+include:
+  - .install
+
+# Create base directory for nodes
+/opt/cortensor/nodes:
+  file.directory:
+    - user: {{ user }}
+    - group: {{ group }}
+    - mode: 755
+    - makedirs: True
+    - recurse:
+      - user
+      - group
+
+# Create log directory
+/var/log/cortensor:
+  file.directory:
+    - user: {{ user }}
+    - group: {{ group }}
+    - mode: 755
+    - makedirs: True
+    - recurse:
+      - user
+      - group
+
+{# Iterate through ASSIGNED nodes #}
+{% for instance_name in assigned_nodes %}
+
+    {# Look up instance config from Registry #}
+    {% set instance_config = node_registry.get(instance_name, {}) %}
+    
+    {# Merge global config with instance config #}
+    {% set final_config = global_config.copy() %}
+    {# Remove internal keys if any exist in global_config to keep env clean #}
+    {% do final_config.pop('instances', None) %}
+    
+    {% do final_config.update(instance_config) %}
+
+    {# Logic: Only the first instance acts as the IPFS Server #}
+    {% if loop.first %}
+        {% do final_config.update({'ENABLE_IPFS_SERVER': '1'}) %}
+    {% else %}
+        {# Force disable for all subsequent instances #}
+        {% do final_config.update({'ENABLE_IPFS_SERVER': '0'}) %}
+    {% endif %}
+
+/opt/cortensor/nodes/{{ instance_name }}:
+  file.directory:
+    - user: {{ user }}
+    - group: {{ group }}
+    - mode: 755
+    - require:
+      - file: /opt/cortensor/nodes
+
+/opt/cortensor/nodes/{{ instance_name }}/.env:
+  file.managed:
+    - source: salt://cortensord/files/cortensord.env.j2
+    - template: jinja
+    - user: {{ user }}
+    - group: {{ group }}
+    - mode: 600
+    - context:
+        config: {{ final_config }}
+    - require:
+      - file: /opt/cortensor/nodes/{{ instance_name }}
+
+{% endfor %}
