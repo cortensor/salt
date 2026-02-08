@@ -71,7 +71,18 @@ For each new server you want to add to the cluster:
     ```bash
     echo "miner-server-01" | sudo tee /etc/salt/minion_id
     ```
+    echo "miner-server-01" | sudo tee /etc/salt/minion_id
+    ```
     *Alternatively, set `id: miner-server-01` in `/etc/salt/minion` config.*
+
+    > **Important**: This ID (`miner-server-01`) must match the entry in your `pillar/top.sls` file on the Master. This is how Salt knows which `server_*.sls` configuration to apply to this specific machine.
+    >
+    > **Example `pillar/top.sls`**:
+    > ```yaml
+    > base:
+    >   'miner-server-01':  # Matches the minion_id
+    >     - cortensord.server_a
+    > ```
 
 5.  **Restart Minion**:
     ```bash
@@ -82,6 +93,22 @@ For each new server you want to add to the cluster:
     On the Master server:
     ```bash
     salt-key -A  # Accept all pending keys
+    ```
+
+7.  **Verify Connection**:
+    On the Master server, ping the minions:
+    ```bash
+    salt '*' test.ping
+    ```
+    *Expected Output:*
+    ```yaml
+    miner-server-01:
+        True
+    ```
+
+    You can also run a test command:
+    ```bash
+    salt '*' cmd.run 'uname -a'
     ```
 
 
@@ -170,6 +197,14 @@ salt '*' state.apply cortensord
 To apply changes to **ONE specific server** (e.g., `server-a`):
 ```bash
 salt 'server-a' state.apply cortensord
+```
+
+**Sequential Execution (One by One)**:
+If you want to update servers one at a time to ensure safety (e.g., checking logs between updates):
+```bash
+salt 'server-a' state.apply cortensord
+# ... verify logs ...
+salt 'server-b' state.apply cortensord
 ```
 
 **Binary Upgrades**:
