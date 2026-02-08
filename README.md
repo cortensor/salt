@@ -356,6 +356,16 @@ sudo salt 'miner-server-01' state.apply cortensord.upgrade
     sudo salt 'miner-server-01' service.restart 'cortensord@*'
     ```
 
+*   **Stop ALL instances on ONE server** (template units):
+    ```bash
+    sudo salt 'miner-server-01' cmd.run "systemctl stop 'cortensord@*'"
+    ```
+
+*   **List running instances on ONE server**:
+    ```bash
+    sudo salt 'miner-server-01' cmd.run "systemctl list-units --type=service 'cortensord@*'"
+    ```
+
 *   **Restart ONE instance across ALL servers** (e.g. if `node_router` is deployed everywhere):
     ```bash
     sudo salt '*' service.restart cortensord@node_router

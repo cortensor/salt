@@ -82,6 +82,7 @@ include:
 {{ nodes_dir }}/{{ instance_name }}/.env:
   file.symlink:
     - target: {{ nodes_dir }}/{{ instance_name }}/{{ env_file_name }}
+    - force: True
     - require:
       - file: {{ nodes_dir }}/{{ instance_name }}/{{ env_file_name }}
 
