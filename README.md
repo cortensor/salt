@@ -123,6 +123,11 @@ File: `pillar/cortensord/nodes.sls`
 ### 3.1 Basic Structure
 Define generic defaults at the top level, and specific instances under `instances`.
 
+**Node Types**:
+- Ephemeral (default): no `ENABLE_DEDICATED_NODE`, no `LLM_CONTAINER_IMAGE`
+- Dedicated: `ENABLE_DEDICATED_NODE: 1`, can set `LLM_CONTAINER_IMAGE`
+- Router: `AGENT_ROLE: routerv1` (no dedicated flags)
+
 ```yaml
 cortensord:
   # --- Global Defaults (Apply to all instances) ---
@@ -133,19 +138,74 @@ cortensord:
   cortensord_nodes:
     # Miner Server 01 - Node 1
     miner-server-01-node-01:
+      NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
       NODE_PRIVATE_KEY: "0x111..."
+      # Ports must be unique per instance on the same server
       LLM_WORKER_BASE_PORT: 8090
+      LLM_GATEWAY_WORKER_BASE_PORT: 18888
       WS_PORT_ROUTER: 9001
+      # Docker / LLM Worker
+      DOCKER_LLM_MANAGER: 1
+      LLM_WORKER_PORT_PREFIX: 0
+      LLM_WORKER_CONTAINER_NAME_PREFIX: ""
+      # Dynamic Model Loading: exclude model indexes (comma-separated)
+      LLM_MEMORY_INDEX_DYNAMIC_LOADING_EXCLUDE_MODEL_INDEXES: ""
       
     # Miner Server 01 - Node 2
     miner-server-01-node-02:
+      NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
       NODE_PRIVATE_KEY: "0x222..."
       LLM_WORKER_BASE_PORT: 8091
+      LLM_GATEWAY_WORKER_BASE_PORT: 18889
       WS_PORT_ROUTER: 9002
+      DOCKER_LLM_MANAGER: 1
+      LLM_WORKER_PORT_PREFIX: 0
+      LLM_WORKER_CONTAINER_NAME_PREFIX: ""
+      LLM_MEMORY_INDEX_DYNAMIC_LOADING_EXCLUDE_MODEL_INDEXES: ""
+
+    # Miner Server 01 - Dedicated Node Example
+    miner-server-01-node-03:
+      NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
+      NODE_PRIVATE_KEY: "0x333..."
+      LLM_WORKER_BASE_PORT: 8092
+      LLM_GATEWAY_WORKER_BASE_PORT: 18890
+      WS_PORT_ROUTER: 9003
+      # Dedicated Node Configuration
+      # Set to 0 to run as an ephemeral node, 1 for dedicated node
+      ENABLE_DEDICATED_NODE: 1
+      # Dedicated nodes can pin a specific model image
+      LLM_CONTAINER_IMAGE: ""
+      # Comma-separated list of session IDs this node is authorized to serve
+      # Example: "0,1,2,3,4,5"
+      DEDICATED_NODE_AUTHORIZED_SESSIONS: "0,1,2,3,4,5"
+
+    # Miner Server 01 - Router Example
+    miner-server-01-node-router:
+      NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
+      NODE_PRIVATE_KEY: "0x444..."
+      AGENT_ROLE: routerv1
+      LLM_WORKER_BASE_PORT: 8093
+      LLM_GATEWAY_WORKER_BASE_PORT: 18891
+      WS_PORT_ROUTER: 9004
+      ROUTER_EXTERNAL_IP: "192.168.250.221"
+      ROUTER_EXTERNAL_PORT: "9001"
+      ROUTER_REST_BIND_IP: "127.0.0.1"
+      ROUTER_REST_BIND_PORT: "5010"
+      ROUTER_MCP: 0
+      ROUTER_MCP_BIND_IP: "127.0.0.1"
+      ROUTER_MCP_BIND_PORT: "8001"
+      ROUTER_MCP_SSE: 0
+      ROUTER_MCP_SSE_BIND_IP: "127.0.0.1"
+      ROUTER_MCP_SSE_BIND_PORT: "8000"
+      X402_ROUTER_NODE_ENABLE: 0
+      X402_ROUTER_NODE_NETWORK: "base-sepolia"
+      X402_ROUTER_NODE_PAY_TO: ""
+      X402_ROUTER_NODE_PRICE_DEFAULT: "0.001"
+      X402_ROUTER_NODE_PRICE_COMPLETIONS: "0.001"
 ```
 
 ### 3.2 Targeting Specific Minions
-If you have multiple physical servers (Minions), you use the `cortensord_assigned_nodes` list in each server's pillar file (`miner-server-01.sls`, `miner-server-02.sls`).
+If you have multiple physical servers (Minions), you use the `cortensord_assigned_nodes` list in each server's pillar file (`miner-server-01.sls`, `miner-server-02.sls`). For a dedicated-only host example, see `pillar/cortensord/miner-server-dedicated-01.sls`.
 
 ### 3.3 Configuration Hierarchy (Global, Server, Instance)
 
