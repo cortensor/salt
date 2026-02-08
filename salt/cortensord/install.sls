@@ -2,6 +2,7 @@
 {% set user = config.get('user', 'cortensor') %}
 {% set group = config.get('group', 'cortensor') %}
 {% set home_dir = config.get('home_dir', '/home/' ~ user) %}
+{% set installer_dir = config.get('installer_dir', '/opt/cortensor-installer') %}
 {% set cortensor_bin = home_dir ~ '/.cortensor/bin' %}
 
 include:
@@ -29,7 +30,7 @@ cortensor_user:
 installer_repo:
   git.latest:
     - name: {{ config.get('source_url', 'https://github.com/cortensor/installer.git') }}
-    - target: /opt/cortensor-installer
+    - target: {{ installer_dir }}
     - force_reset: False
     - update_head: False  # Only clone if missing, do not auto-update
 
@@ -38,7 +39,7 @@ installer_repo:
 install_binary:
   file.managed:
     - name: /usr/local/bin/cortensord
-    - source: /opt/cortensor-installer/dist/cortensord
+    - source: {{ installer_dir }}/dist/cortensord
     - mode: 755
     - require:
       - git: installer_repo
@@ -63,7 +64,7 @@ link_binary_local:
 install_start_script:
   file.managed:
     - name: {{ cortensor_bin }}/start-cortensor.sh
-    - source: /opt/cortensor-installer/utils/start-linux.sh
+    - source: {{ installer_dir }}/utils/start-linux.sh
     - mode: 755
     - user: {{ user }}
     - group: {{ group }}
@@ -73,7 +74,7 @@ install_start_script:
 install_stop_script:
   file.managed:
     - name: {{ cortensor_bin }}/stop-cortensor.sh
-    - source: /opt/cortensor-installer/utils/stop-linux.sh
+    - source: {{ installer_dir }}/utils/stop-linux.sh
     - mode: 755
     - user: {{ user }}
     - group: {{ group }}

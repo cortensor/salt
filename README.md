@@ -77,13 +77,13 @@ For each new server you want to add to the cluster:
     ```
     *Alternatively, set `id: miner-server-01` in `/etc/salt/minion` config.*
 
-    > **Important**: This ID (`miner-server-01`) must match the entry in your `pillar/top.sls` file on the Master. This is how Salt knows which `server_*.sls` configuration to apply to this specific machine.
+    > **Important**: This ID (`miner-server-01`) must match the entry in your `pillar/top.sls` file on the Master. This is how Salt knows which `miner-server-*.sls` configuration to apply to this specific machine.
     >
     > **Example `pillar/top.sls`**:
     > ```yaml
     > base:
     >   'miner-server-01':  # Matches the minion_id
-    >     - cortensord.server_a
+    >     - cortensord.miner-server-01
     > ```
 
 5.  **Restart Minion**:
@@ -131,42 +131,42 @@ cortensord:
   
   # --- Instance Definitions (Registry) ---
   cortensord_nodes:
-    # Server A - Node 1
-    server_a_node_01:
+    # Miner Server 01 - Node 1
+    miner-server-01-node-01:
       NODE_PRIVATE_KEY: "0x111..."
       LLM_WORKER_BASE_PORT: 8090
       WS_PORT_ROUTER: 9001
       
-    # Server A - Node 2
-    server_a_node_02:
+    # Miner Server 01 - Node 2
+    miner-server-01-node-02:
       NODE_PRIVATE_KEY: "0x222..."
       LLM_WORKER_BASE_PORT: 8091
       WS_PORT_ROUTER: 9002
 ```
 
 ### 3.2 Targeting Specific Minions
-If you have multiple physical servers (Minions), you use the `cortensord_assigned_nodes` list in each server's pillar file (`server_a.sls`, `server_b.sls`).
+If you have multiple physical servers (Minions), you use the `cortensord_assigned_nodes` list in each server's pillar file (`miner-server-01.sls`, `miner-server-02.sls`).
 
 ### 3.3 Configuration Hierarchy (Global, Server, Instance)
 
 You can override variables at different levels. The most specific one wins (Instance > Server > Global).
 
 1.  **Server Updates**:
-    To change `CHAINID` for *all nodes* on a specific server (e.g., Server A), edit `pillar/cortensord/server_a.sls`:
+    To change `CHAINID` for *all nodes* on a specific server (e.g., Miner Server 01), edit `pillar/cortensord/miner-server-01.sls`:
     ```yaml
     cortensord:
       # Optional: Override global settings for this server
       CHAINID: 9999
     
     cortensord_assigned_nodes:
-        - server_a_node_01
+        - miner-server-01-node-01
     ```
 
 2.  **Instance Updates**:
     To change `CHAINID` for a *single node*, edit `pillar/cortensord/nodes.sls`:
     ```yaml
     cortensord_nodes:
-      server_a_node_01:
+      miner-server-01-node-01:
         CHAINID: 5555
     ```
 
@@ -178,7 +178,7 @@ This section covers all day-to-day operations for managing the fleet.
 **Initial Setup (Per Minion)**:
 To install Cortensord and all dependencies (Docker, IPFS) on a new server for the first time:
 
-1.  **Configure Pillar**: Ensure `nodes.sls` and `server_*.sls` are set up.
+1.  **Configure Pillar**: Ensure `nodes.sls` and `miner-server-*.sls` are set up.
 2.  **Run Install**:
     
     *   **Install on ALL Servers**:
@@ -239,19 +239,19 @@ sudo salt '*' state.apply cortensord.upgrade
 ```
 To upgrade on **ONE specific server**:
 ```bash
-sudo salt 'server-a' state.apply cortensord.upgrade
+sudo salt 'miner-server-01' state.apply cortensord.upgrade
 ```
 
 **Service Management**:
 
 *   **Restart ONE specific instance on ONE server**:
     ```bash
-    sudo salt 'server_a' service.restart cortensord@server_a_node_01
+    sudo salt 'miner-server-01' service.restart cortensord@miner-server-01-node-01
     ```
 
 *   **Restart ALL instances on ONE server**:
     ```bash
-    sudo salt 'server_a' service.restart 'cortensord@*'
+    sudo salt 'miner-server-01' service.restart 'cortensord@*'
     ```
 
 *   **Restart ONE instance across ALL servers** (e.g. if `node_router` is deployed everywhere):
@@ -263,12 +263,12 @@ sudo salt 'server-a' state.apply cortensord.upgrade
 
 **View Logs (System)**:
 ```bash
-journalctl -u cortensord@server_a_node_01 -f
+journalctl -u cortensord@miner-server-01-node-01 -f
 ```
 
 **View Logs (App)**:
 ```bash
-tail -f /var/log/cortensor/cortensord-server_a_node_01.log
+tail -f /var/log/cortensor/cortensord-miner-server-01-node-01.log
 ```
 
 **Common Errors**:
@@ -315,7 +315,7 @@ tail -f /var/log/cortensor/cortensord-server_a_node_01.log
 | **Ping Minions** | `sudo salt '*' test.ping` |
 | **Apply State** | `sudo salt '*' state.apply cortensord` |
 | **Upgrade Binary** | `sudo salt '*' state.apply cortensord.upgrade` |
-| **Restart Node** | `sudo salt '*' service.restart cortensord@server_a_node_01` |
+| **Restart Node** | `sudo salt '*' service.restart cortensord@miner-server-01-node-01` |
 
 #### Targeting Examples
 -   **Single Server**:
@@ -349,11 +349,11 @@ You can execute ANY shell command on your minions from the master:
 If you decommission a server or need to re-key it:
 1.  **Stop Minion service** on the old server (if still live):
     ```bash
-    ssh user@server-a 'sudo systemctl stop salt-minion'
+    ssh user@miner-server-01 'sudo systemctl stop salt-minion'
     ```
 2.  **Delete Key** on Master:
     ```bash
-    sudo salt-key -d 'server-a'
+    sudo salt-key -d 'miner-server-01'
     # Press 'y' to confirm
     ```
     *This revokes the server's access. It will need to re-register to connect again.*

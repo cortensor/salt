@@ -2,6 +2,8 @@
 {% set user = config.get('user', 'cortensor') %}
 {% set group = config.get('group', 'cortensor') %}
 
+{% set log_dir = config.get('log_dir', '/var/log/cortensor') %}
+
 logrotate_pkg:
   pkg.installed:
     - name: logrotate
@@ -17,5 +19,6 @@ cortensor_logrotate_config:
     - context:
         user: {{ user }}
         group: {{ group }}
+        log_dir: {{ log_dir }}
     - require:
       - pkg: logrotate

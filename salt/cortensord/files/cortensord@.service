@@ -13,9 +13,9 @@ Group={{ group }}
 
 # Directories
 StateDirectory=cortensor
-WorkingDirectory=/opt/cortensor/nodes/%i
-Environment=CORTENSOR_PATH="/opt/cortensor/nodes/%i"
-EnvironmentFile=/opt/cortensor/nodes/%i/.env
+WorkingDirectory={{ nodes_dir }}/%i
+Environment=CORTENSOR_PATH="{{ nodes_dir }}/%i"
+EnvironmentFile={{ nodes_dir }}/%i/.env
 
 # Paths
 Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:{{ home_dir }}/.cortensor/bin
@@ -29,8 +29,8 @@ TimeoutStartSec=infinity
 Type=simple
 
 # Logging (Unique per instance)
-StandardOutput=append:/var/log/cortensor/cortensord-%i.log
-StandardError=append:/var/log/cortensor/cortensord-%i.log
+StandardOutput=append:{{ log_dir }}/cortensord-%i.log
+StandardError=append:{{ log_dir }}/cortensord-%i.log
 
 # Command
 # Note: ${AGENT_ROLE} is pulled from the EnvironmentFile loaded above

@@ -2,6 +2,8 @@
 {% set user = config.get('user', 'cortensor') %}
 {% set group = config.get('group', 'cortensor') %}
 {% set home_dir = config.get('home_dir', '/home/' ~ user) %}
+{% set nodes_dir = config.get('nodes_dir', '/opt/cortensor/nodes') %}
+{% set log_dir = config.get('log_dir', '/var/log/cortensor') %}
 
 {% set assigned_nodes = pillar.get('cortensord_assigned_nodes', []) %}
 
@@ -19,7 +21,10 @@ include:
     - context:
         user: {{ user }}
         group: {{ group }}
+        group: {{ group }}
         home_dir: {{ home_dir }}
+        nodes_dir: {{ nodes_dir }}
+        log_dir: {{ log_dir }}
     - watch_in:
       - module: systemd_reload
 
@@ -36,7 +41,7 @@ cortensord_service_{{ instance_name }}:
     - enable: True
     - init_delay: 10
     - watch:
-        - file: /opt/cortensor/nodes/{{ instance_name }}/.env
+        - file: {{ nodes_dir }}/{{ instance_name }}/.env
         - file: /etc/systemd/system/cortensord@.service
         - file: install_binary  # Defined in install.sls, triggers restart on binary upgrade
     - require:
