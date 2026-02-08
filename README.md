@@ -90,13 +90,13 @@ For each new server you want to add to the cluster:
 6.  **Accept Key on Master**:
     On the Master server:
     ```bash
-    salt-key -A  # Accept all pending keys
+    sudo salt-key -A  # Accept all pending keys
     ```
 
 7.  **Verify Connection**:
     On the Master server, ping the minions:
     ```bash
-    salt '*' test.ping
+    sudo salt '*' test.ping
     ```
     *Expected Output:*
     ```yaml
@@ -106,7 +106,7 @@ For each new server you want to add to the cluster:
 
     You can also run a test command:
     ```bash
-    salt '*' cmd.run 'uname -a'
+    sudo salt '*' cmd.run 'uname -a'
     ```
 
 
@@ -177,7 +177,7 @@ To install Cortensord and all dependencies (Docker, IPFS) on a new server for th
 1.  **Configure Pillar**: Ensure `nodes.sls` and `server_*.sls` are set up.
 2.  **Run Install**:
     ```bash
-    salt '*' state.apply cortensord
+    sudo salt '*' state.apply cortensord
     ```
     *This creates users, installs binaries, generates .env files, downloads Docker images (Warmup), and starts services.*
 
@@ -185,51 +185,49 @@ To install Cortensord and all dependencies (Docker, IPFS) on a new server for th
 
 ### 4.2 Routine Operations
 
-### 4.2 Routine Operations
-
 **Configuration Updates**:
 To apply changes to **ALL servers**:
 ```bash
-salt '*' state.apply cortensord
+sudo salt '*' state.apply cortensord
 ```
-To apply changes to **ONE specific server** (e.g., `server-a`):
+To apply changes to **ONE specific server** (e.g., `miner-server-01`):
 ```bash
-salt 'server-a' state.apply cortensord
+sudo salt 'miner-server-01' state.apply cortensord
 ```
 
 **Sequential Execution (One by One)**:
 If you want to update servers one at a time to ensure safety (e.g., checking logs between updates):
 ```bash
-salt 'server-a' state.apply cortensord
+sudo salt 'miner-server-01' state.apply cortensord
 # ... verify logs ...
-salt 'server-b' state.apply cortensord
+sudo salt 'miner-server-02' state.apply cortensord
 ```
 
 **Binary Upgrades**:
 To upgrade `cortensord` binary on **ALL servers**:
 ```bash
-salt '*' state.apply cortensord.upgrade
+sudo salt '*' state.apply cortensord.upgrade
 ```
 To upgrade on **ONE specific server**:
 ```bash
-salt 'server-a' state.apply cortensord.upgrade
+sudo salt 'server-a' state.apply cortensord.upgrade
 ```
 
 **Service Management**:
 
 *   **Restart ONE specific instance on ONE server**:
     ```bash
-    salt 'server_a' service.restart cortensord@server_a_node_01
+    sudo salt 'server_a' service.restart cortensord@server_a_node_01
     ```
 
 *   **Restart ALL instances on ONE server**:
     ```bash
-    salt 'server_a' service.restart 'cortensord@*'
+    sudo salt 'server_a' service.restart 'cortensord@*'
     ```
 
 *   **Restart ONE instance across ALL servers** (e.g. if `node_router` is deployed everywhere):
     ```bash
-    salt '*' service.restart cortensord@node_router
+    sudo salt '*' service.restart cortensord@node_router
     ```
 
 ### 4.3 Troubleshooting & Logs
@@ -249,16 +247,22 @@ tail -f /var/log/cortensor/cortensord-server_a_node_01.log
 #### Master Commands (Run on Salt Master)
 | Action | Command |
 | :--- | :--- |
-| **List Minions** | `salt-key -L` |
-| **Accept Keys** | `salt-key -A` |
-| **Ping Minions** | `salt '*' test.ping` |
-| **Apply State** | `salt '*' state.apply cortensord` |
-| **Upgrade Binary** | `salt '*' state.apply cortensord.upgrade` |
-| **Restart Node** | `salt '*' service.restart cortensord@server_a_node_01` |
+| **List Minions** | `sudo salt-key -L` |
+| **Accept Keys** | `sudo salt-key -A` |
+| **Ping Minions** | `sudo salt '*' test.ping` |
+| **Apply State** | `sudo salt '*' state.apply cortensord` |
+| **Upgrade Binary** | `sudo salt '*' state.apply cortensord.upgrade` |
+| **Restart Node** | `sudo salt '*' service.restart cortensord@server_a_node_01` |
 
-#### Targeting
--   **Single Server**: `salt 'server-a' ...`
--   **List**: `salt -L 'server-a,server-b' ...`
+#### Targeting Examples
+-   **Single Server**:
+    ```bash
+    sudo salt 'miner-server-01' test.ping
+    ```
+-   **List of Servers** (`-L`):
+    ```bash
+    sudo salt -L 'miner-server-01,miner-server-02' test.ping
+    ```
 
 ### 4.5 Decommissioning & Key Management
 
@@ -270,7 +274,7 @@ If you decommission a server or need to re-key it:
     ```
 2.  **Delete Key** on Master:
     ```bash
-    salt-key -d 'server-a'
+    sudo salt-key -d 'server-a'
     # Press 'y' to confirm
     ```
     *This revokes the server's access. It will need to re-register to connect again.*
