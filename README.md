@@ -280,6 +280,12 @@ sudo salt 'miner-server-01' state.apply cortensord.upgrade
     sudo salt 'miner-server-01' service.restart cortensord@miner-server-01-node-01
     ```
 
+*   **Start/Stop ONE specific instance on ONE server**:
+    ```bash
+    sudo salt 'miner-server-01' service.start cortensord@miner-server-01-node-01
+    sudo salt 'miner-server-01' service.stop cortensord@miner-server-01-node-01
+    ```
+
 *   **Restart ALL instances on ONE server**:
     ```bash
     sudo salt 'miner-server-01' service.restart 'cortensord@*'
