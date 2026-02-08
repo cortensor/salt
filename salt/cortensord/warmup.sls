@@ -3,6 +3,8 @@
 {% set user = config.get('user', 'cortensor') %}
 {% set home_dir = config.get('home_dir', '/home/' ~ user) %}
 {% set cortensor_bin = home_dir ~ '/.cortensor/bin' %}
+{# Set `cortensord:warmup_skip: true` in pillar to skip warmup if done manually #}
+{% set warmup_skip = config.get('warmup_skip', False) %}
 
 # Only run warmup if there is at least one node assigned
 {% if assigned_nodes|length > 0 %}
@@ -14,6 +16,13 @@
       - .install
       - .config
 
+    {% if warmup_skip %}
+    warmup_skipped_marker:
+      file.managed:
+        - name: /var/lib/cortensor_warmup_done
+        - contents: "Warmup skipped on {{ None|strftime('%Y-%m-%d %H:%M:%S') }} (manual run)"
+        - replace: False
+    {% else %}
     # Run warmup using the first node's environment
     # This pulls necessary Docker images which are then available to ALL nodes
     cortensord_warmup_shared:
@@ -40,5 +49,6 @@
         - contents: "Warmup completed on {{ None|strftime('%Y-%m-%d %H:%M:%S') }}"
         - require:
             - cmd: cortensord_warmup_shared
+    {% endif %}
 
 {% endif %}

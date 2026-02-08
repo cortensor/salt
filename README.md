@@ -214,6 +214,28 @@ To install Cortensord and all dependencies (Docker, IPFS) on a new server for th
     `cortensord.warmup`. If you run pieces manually, make sure warmup
     runs before `cortensord.service`.
 
+    **Manual Warmup (Single Instance)**:
+    Use this if you want to start only one instance to pull Docker images,
+    then let the rest start later.
+
+    1. Start only the first instance:
+       ```bash
+       sudo systemctl stop 'cortensord@*'
+       sudo systemctl start cortensord@miner-server-01-node-01
+       sudo journalctl -u cortensord@miner-server-01-node-01 -f
+       ```
+    2. When images are pulled, set a warmup skip flag and apply warmup
+       to create the marker:
+       ```yaml
+       # pillar/cortensord/common.sls (or miner-specific pillar)
+       cortensord:
+         warmup_skip: true
+       ```
+       ```bash
+       sudo salt 'miner-server-01' saltutil.refresh_pillar
+       sudo salt 'miner-server-01' state.apply cortensord.warmup -l info
+       ```
+
 ---
 
 ### 4.2 Routine Operations
