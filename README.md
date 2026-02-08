@@ -118,10 +118,10 @@ For each new server you want to add to the cluster:
 
 The configuration is driven by **Pillar** data. You define global settings and per-instance overrides.
 
-File: `pillar/cortensord/nodes.sls`
+File: `pillar/cortensord/instances/nodes.sls`
 
 ### 3.1 Basic Structure
-Define generic defaults at the top level, and specific instances under `instances`.
+Define generic defaults at the top level, and specific instances under `instances/` by type.
 
 **Node Types**:
 - Ephemeral (default): no `ENABLE_DEDICATED_NODE`, no `LLM_CONTAINER_IMAGE`
@@ -133,88 +133,79 @@ Define generic defaults at the top level, and specific instances under `instance
 - Router advertises its public endpoint via `ROUTER_EXTERNAL_IP` / `ROUTER_EXTERNAL_PORT`.
 
 ```yaml
-cortensord:
-  # --- Global Defaults (Apply to all instances) ---
-  CONTRACT_ADDRESS_RUNTIME: "0xa43..."
-  CHAINID: 421614
-  
-  # --- Instance Definitions (Registry) ---
-  cortensord_nodes:
-    # Miner Server 01 - Node 1
-    miner-server-01-node-01:
-      NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
-      NODE_PRIVATE_KEY: "0x111..."
-      # Ports must be unique per instance on the same server
-      LLM_WORKER_BASE_PORT: 8090
-      LLM_GATEWAY_WORKER_BASE_PORT: 18888
-      # WS_PORT_ROUTER is inherited from common.sls for miners
-      # Docker / LLM Worker
-      DOCKER_LLM_MANAGER: 1
-      LLM_WORKER_PORT_PREFIX: 0
-      LLM_WORKER_CONTAINER_NAME_PREFIX: ""
-      # Dynamic Model Loading: exclude model indexes (comma-separated)
-      LLM_MEMORY_INDEX_DYNAMIC_LOADING_EXCLUDE_MODEL_INDEXES: ""
-      
-    # Miner Server 01 - Node 2
-    miner-server-01-node-02:
-      NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
-      NODE_PRIVATE_KEY: "0x222..."
-      LLM_WORKER_BASE_PORT: 8091
-      LLM_GATEWAY_WORKER_BASE_PORT: 18889
-      # WS_PORT_ROUTER is inherited from common.sls for miners
-      DOCKER_LLM_MANAGER: 1
-      LLM_WORKER_PORT_PREFIX: 0
-      LLM_WORKER_CONTAINER_NAME_PREFIX: ""
-      LLM_MEMORY_INDEX_DYNAMIC_LOADING_EXCLUDE_MODEL_INDEXES: ""
+# Instances are grouped by type:
+# - pillar/cortensord/instances/ephemeral.sls
+# - pillar/cortensord/instances/dedicated.sls
+# - pillar/cortensord/instances/router.sls
+```
 
-    # Miner Server 01 - Dedicated Node Example
-    miner-server-01-node-03:
-      NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
-      NODE_PRIVATE_KEY: "0x333..."
-      LLM_HOST: "127.0.0.1"
-      LLM_PORT: "8090"
-      # WS_PORT_ROUTER is inherited from common.sls for miners
-      # Dedicated Node Configuration
-      # Set to 0 to run as an ephemeral node, 1 for dedicated node
-      ENABLE_DEDICATED_NODE: 1
-      # Dedicated nodes can pin a specific model image
-      LLM_CONTAINER_IMAGE: ""
-      # Comma-separated list of session IDs this node is authorized to serve
-      # Example: "0,1,2,3,4,5"
-      DEDICATED_NODE_AUTHORIZED_SESSIONS: "0,1,2,3,4,5"
+**Ephemeral Example** (`pillar/cortensord/instances/ephemeral.sls`)
+```yaml
+cortensord_nodes:
+  miner-server-01-node-01:
+    NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
+    NODE_PRIVATE_KEY: "0x111..."
+    # Ports must be unique per instance on the same server
+    LLM_WORKER_BASE_PORT: 8090
+    LLM_GATEWAY_WORKER_BASE_PORT: 18888
+    DOCKER_LLM_MANAGER: 1
+    LLM_WORKER_PORT_PREFIX: 0
+    LLM_WORKER_CONTAINER_NAME_PREFIX: ""
+    # Dynamic Model Loading: exclude model indexes (comma-separated)
+    LLM_MEMORY_INDEX_DYNAMIC_LOADING_EXCLUDE_MODEL_INDEXES: ""
+```
+L3 example is included as `miner-server-03-node-l3` in the same file.
 
-    # Miner Server 01 - Router Example
-    miner-server-01-node-router:
-      NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
-      NODE_PRIVATE_KEY: "0x444..."
-      AGENT_ROLE: routerv1
-      WS_PORT_ROUTER: 9004
-      ROUTER_EXTERNAL_IP: "192.168.250.221"
-      ROUTER_EXTERNAL_PORT: "9001"
-      ROUTER_REST_BIND_IP: "127.0.0.1"
-      ROUTER_REST_BIND_PORT: "5010"
-      ROUTER_MCP: 0
-      ROUTER_MCP_BIND_IP: "127.0.0.1"
-      ROUTER_MCP_BIND_PORT: "8001"
-      ROUTER_MCP_SSE: 0
-      ROUTER_MCP_SSE_BIND_IP: "127.0.0.1"
-      ROUTER_MCP_SSE_BIND_PORT: "8000"
-      X402_ROUTER_NODE_ENABLE: 0
-      X402_ROUTER_NODE_NETWORK: "base-sepolia"
-      X402_ROUTER_NODE_PAY_TO: ""
-      X402_ROUTER_NODE_PRICE_DEFAULT: "0.001"
-      X402_ROUTER_NODE_PRICE_COMPLETIONS: "0.001"
+**Dedicated Example** (`pillar/cortensord/instances/dedicated.sls`)
+```yaml
+cortensord_nodes:
+  miner-server-01-node-03:
+    NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
+    NODE_PRIVATE_KEY: "0x333..."
+    LLM_HOST: "127.0.0.1"
+    LLM_PORT: "8090"
+    # Dedicated Node Configuration
+    ENABLE_DEDICATED_NODE: 1
+    # Dedicated nodes can pin a specific model image
+    LLM_CONTAINER_IMAGE: ""
+    # Comma-separated list of session IDs this node is authorized to serve
+    # Example: "0,1,2,3,4,5"
+    DEDICATED_NODE_AUTHORIZED_SESSIONS: "0,1,2,3,4,5"
+```
+
+**Router Example** (`pillar/cortensord/instances/router.sls`)
+```yaml
+cortensord_nodes:
+  router-server-01-node-router:
+    NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
+    NODE_PRIVATE_KEY: "0x444..."
+    AGENT_ROLE: routerv1
+    ROUTER_EXTERNAL_IP: "192.168.250.221"
+    ROUTER_EXTERNAL_PORT: "9001"
+    ROUTER_REST_BIND_IP: "127.0.0.1"
+    ROUTER_REST_BIND_PORT: "5010"
+    ROUTER_MCP: 0
+    ROUTER_MCP_BIND_IP: "127.0.0.1"
+    ROUTER_MCP_BIND_PORT: "8001"
+    ROUTER_MCP_SSE: 0
+    ROUTER_MCP_SSE_BIND_IP: "127.0.0.1"
+    ROUTER_MCP_SSE_BIND_PORT: "8000"
+    X402_ROUTER_NODE_ENABLE: 0
+    X402_ROUTER_NODE_NETWORK: "base-sepolia"
+    X402_ROUTER_NODE_PAY_TO: ""
+    X402_ROUTER_NODE_PRICE_DEFAULT: "0.001"
+    X402_ROUTER_NODE_PRICE_COMPLETIONS: "0.001"
 ```
 
 ### 3.2 Targeting Specific Minions
-If you have multiple physical servers (Minions), you use the `cortensord_assigned_nodes` list in each server's pillar file (`miner-server-01.sls`, `miner-server-02.sls`). For a dedicated-only host example, see `pillar/cortensord/miner-server-dedicated-01.sls`.
+If you have multiple physical servers (Minions), you use the `cortensord_assigned_nodes` list in each server's pillar file (`pillar/cortensord/servers/miner-server-01.sls`, `pillar/cortensord/servers/miner-server-02.sls`, `pillar/cortensord/servers/miner-server-03.sls`). For a dedicated-only host example, see `pillar/cortensord/servers/miner-server-dedicated-01.sls`.
 
 ### 3.3 Configuration Hierarchy (Global, Server, Instance)
 
 You can override variables at different levels. The most specific one wins (Instance > Server > Global).
 
 1.  **Server Updates**:
-    To change `CHAINID` for *all nodes* on a specific server (e.g., Miner Server 01), edit `pillar/cortensord/miner-server-01.sls`:
+    To change `CHAINID` for *all nodes* on a specific server (e.g., Miner Server 01), edit `pillar/cortensord/servers/miner-server-01.sls`:
     ```yaml
     cortensord:
       # Optional: Override global settings for this server
@@ -225,7 +216,9 @@ You can override variables at different levels. The most specific one wins (Inst
     ```
 
 2.  **Instance Updates**:
-    To change `CHAINID` for a *single node*, edit `pillar/cortensord/nodes.sls`:
+    To change `CHAINID` for a *single node*, edit the appropriate instances file:
+    `pillar/cortensord/instances/ephemeral.sls`, `pillar/cortensord/instances/dedicated.sls`,
+    or `pillar/cortensord/instances/router.sls`.
     ```yaml
     cortensord_nodes:
       miner-server-01-node-01:
