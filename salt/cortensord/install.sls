@@ -3,7 +3,6 @@
 {% set group = config.get('group', 'cortensor') %}
 {% set home_dir = config.get('home_dir', '/home/' ~ user) %}
 {% set cortensor_bin = home_dir ~ '/.cortensor/bin' %}
-{% set cortensor_logs = home_dir ~ '/.cortensor/logs' %}
 
 include:
   - docker
@@ -80,28 +79,3 @@ install_stop_script:
     - group: {{ group }}
     - require:
       - git: installer_repo
-
-# 5. Log Dirs (User script did this, we confirm it here)
-{{ cortensor_logs }}:
-  file.directory:
-    - user: {{ user }}
-    - group: {{ group }}
-    - makedirs: True
-
-log_files:
-  file.touch:
-    - names:
-      - {{ cortensor_logs }}/cortensord.log
-      - {{ cortensor_logs }}/cortensord-llm.log
-    - makedirs: True
-    - require:
-        - file: {{ cortensor_logs }}
-
-set_log_perms:
-  file.managed:
-    - names:
-      - {{ cortensor_logs }}/cortensord.log
-      - {{ cortensor_logs }}/cortensord-llm.log
-    - user: {{ user }}
-    - group: {{ group }}
-    - replace: False  # Don't overwrite content, just set perms

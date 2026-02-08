@@ -43,6 +43,11 @@ include:
     
     {% do final_config.update(instance_config) %}
 
+    {# Ensure per-instance app log file name unless explicitly set #}
+    {% if not final_config.get('LOG_FILE_NAME') %}
+        {% do final_config.update({'LOG_FILE_NAME': 'agent_miner-' ~ instance_name ~ '.log'}) %}
+    {% endif %}
+
     {# Logic: Only the first instance acts as the IPFS Server #}
     {% if loop.first %}
         {% do final_config.update({'ENABLE_IPFS_SERVER': '1'}) %}

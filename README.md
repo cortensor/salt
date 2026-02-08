@@ -20,20 +20,24 @@ On your management server (Master):
     *` -P` enables pip installation support if needed, `-M` installs Master.*
 2.  **Configure File Roots**:
     Edit `/etc/salt/master` to point to this repository.
+    
+    *Example: If you cloned this repo to `/opt/cor/salt`*:
     ```yaml
     file_roots:
       base:
-        - /path/to/corsalt/salt
+        - /opt/cor/salt/salt
 
     pillar_roots:
       base:
-        - /path/to/corsalt/pillar
-    home_dir: /home/deploy  # Optional: Override default home derivation
+        - /opt/cor/salt/pillar
+    
+    # Optional: Override default home derivation if needed
+    # home_dir: /home/deploy
     ```
     *Alternatively, symlink the directories to the default locations:*
     ```bash
-    ln -s /path/to/corsalt/salt /srv/salt
-    ln -s /path/to/corsalt/pillar /srv/pillar
+    sudo ln -s /opt/cor/salt/salt /srv/salt
+    sudo ln -s /opt/cor/salt/pillar /srv/pillar
     ```
 3.  **Restart Master**:
     ```bash
@@ -176,10 +180,35 @@ To install Cortensord and all dependencies (Docker, IPFS) on a new server for th
 
 1.  **Configure Pillar**: Ensure `nodes.sls` and `server_*.sls` are set up.
 2.  **Run Install**:
+    
+    *   **Install on ALL Servers**:
+        ```bash
+        sudo salt '*' state.apply cortensord
+        ```
+    *   **Install on ONE Specific Server**:
+        ```bash
+        sudo salt 'miner-server-01' state.apply cortensord
+        ```
+    *   **Install Sequentially (One by One)**:
+        ```bash
+        sudo salt 'miner-server-01' state.apply cortensord
+        # ... verify ...
+        sudo salt 'miner-server-02' state.apply cortensord
+        ```
+    *This creates users, installs binaries, generates .env files, downloads Docker images (Warmup), and starts services.*
+
+    **Granular Execution (Component by Component)**:
+    If you prefer to install dependencies separately first:
     ```bash
+    # 1. Install Docker
+    sudo salt '*' state.apply docker
+
+    # 2. Install IPFS
+    sudo salt '*' state.apply ipfs
+
+    # 3. Install Cortensord (Application & Config)
     sudo salt '*' state.apply cortensord
     ```
-    *This creates users, installs binaries, generates .env files, downloads Docker images (Warmup), and starts services.*
 
 ---
 
@@ -242,6 +271,40 @@ journalctl -u cortensord@server_a_node_01 -f
 tail -f /var/log/cortensor/cortensord-server_a_node_01.log
 ```
 
+**Common Errors**:
+
+*   **"Minion did not return. [No response]"**
+    This means the Master timed out waiting for the Minion, but the job might still be running.
+    
+    1.  **Check if job is still running**:
+        ```bash
+        sudo salt 'miner-server-01' saltutil.running
+        ```
+    2.  **Retrieve results later (Job Lookup)**:
+        If you see a Job ID (e.g., `20260208095135498459`) in the error/log:
+        ```bash
+        sudo salt-run jobs.lookup_jid 20260208095135498459
+        ```
+
+*   **Manual Debug / Step-by-Step Execution**:
+    If the main state fails, you can run detailed sub-states with `-l info` logs:
+    ```bash
+    # 1. Install Binary & Users
+    sudo salt 'miner-server-01' state.apply cortensord.install -l info
+    
+    # 2. Generate Configs (.env)
+    sudo salt 'miner-server-01' state.apply cortensord.config -l info
+    
+    # 3. Pull Docker Images (Warmup)
+    sudo salt 'miner-server-01' state.apply cortensord.warmup -l info
+    
+    # 4. Setup Systemd Services
+    sudo salt 'miner-server-01' state.apply cortensord.service -l info
+    
+    # 5. Setup Log Rotation
+    sudo salt 'miner-server-01' state.apply cortensord.logrotate -l info
+    ```
+
 ### 4.4 Command Cheat Sheet (Useful)
 
 #### Master Commands (Run on Salt Master)
@@ -262,6 +325,22 @@ tail -f /var/log/cortensor/cortensord-server_a_node_01.log
 -   **List of Servers** (`-L`):
     ```bash
     sudo salt -L 'miner-server-01,miner-server-02' test.ping
+    ```
+
+#### Running Remote Commands (`cmd.run`)
+You can execute ANY shell command on your minions from the master:
+
+*   **Check Disk Space**:
+    ```bash
+    sudo salt '*' cmd.run 'df -h'
+    ```
+*   **Check Memory**:
+    ```bash
+    sudo salt 'miner-server-01' cmd.run 'free -m'
+    ```
+*   **Run Custom Script/Command**:
+    ```bash
+    sudo salt '*' cmd.run 'ls -la /opt/cortensor'
     ```
 
 ### 4.5 Decommissioning & Key Management
