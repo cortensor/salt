@@ -10,6 +10,10 @@ include:
   - .config
   - .unit
 
+# Ensure the warmup marker exists before starting services.
+/var/lib/cortensor_warmup_done:
+  file.exists: []
+
 {# Iterate through ASSIGNED nodes #}
 {% for instance_name in assigned_nodes %}
 
