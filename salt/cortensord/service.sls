@@ -21,7 +21,6 @@ include:
     - context:
         user: {{ user }}
         group: {{ group }}
-        group: {{ group }}
         home_dir: {{ home_dir }}
         nodes_dir: {{ nodes_dir }}
         log_dir: {{ log_dir }}
