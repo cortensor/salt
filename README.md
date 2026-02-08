@@ -84,7 +84,6 @@ For each new server you want to add to the cluster:
     salt-key -A  # Accept all pending keys
     ```
 
-    ```
 
 ## 3. Configuring Cortensord Instances
 
