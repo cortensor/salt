@@ -129,7 +129,7 @@ Define generic defaults at the top level, and specific instances under `instance
 - Router: `AGENT_ROLE: routerv1` (no dedicated flags)
 
 **Router vs Miner WebSocket Settings**:
-- Miners use `WS_HOST_ROUTER` / `WS_PORT_ROUTER` to connect to the router’s internal address.
+- Miners use `WS_HOST_ROUTER` / `WS_PORT_ROUTER` to connect to the router’s internal address (defaults in `pillar/cortensord/common.sls`).
 - Router advertises its public endpoint via `ROUTER_EXTERNAL_IP` / `ROUTER_EXTERNAL_PORT`.
 
 ```yaml
@@ -147,7 +147,7 @@ cortensord:
       # Ports must be unique per instance on the same server
       LLM_WORKER_BASE_PORT: 8090
       LLM_GATEWAY_WORKER_BASE_PORT: 18888
-      WS_PORT_ROUTER: 9001
+      # WS_PORT_ROUTER is inherited from common.sls for miners
       # Docker / LLM Worker
       DOCKER_LLM_MANAGER: 1
       LLM_WORKER_PORT_PREFIX: 0
@@ -161,7 +161,7 @@ cortensord:
       NODE_PRIVATE_KEY: "0x222..."
       LLM_WORKER_BASE_PORT: 8091
       LLM_GATEWAY_WORKER_BASE_PORT: 18889
-      WS_PORT_ROUTER: 9002
+      # WS_PORT_ROUTER is inherited from common.sls for miners
       DOCKER_LLM_MANAGER: 1
       LLM_WORKER_PORT_PREFIX: 0
       LLM_WORKER_CONTAINER_NAME_PREFIX: ""
@@ -173,7 +173,7 @@ cortensord:
       NODE_PRIVATE_KEY: "0x333..."
       LLM_HOST: "127.0.0.1"
       LLM_PORT: "8090"
-      WS_PORT_ROUTER: 9003
+      # WS_PORT_ROUTER is inherited from common.sls for miners
       # Dedicated Node Configuration
       # Set to 0 to run as an ephemeral node, 1 for dedicated node
       ENABLE_DEDICATED_NODE: 1
@@ -188,8 +188,6 @@ cortensord:
       NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
       NODE_PRIVATE_KEY: "0x444..."
       AGENT_ROLE: routerv1
-      LLM_WORKER_BASE_PORT: 8093
-      LLM_GATEWAY_WORKER_BASE_PORT: 18891
       WS_PORT_ROUTER: 9004
       ROUTER_EXTERNAL_IP: "192.168.250.221"
       ROUTER_EXTERNAL_PORT: "9001"

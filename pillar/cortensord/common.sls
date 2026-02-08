@@ -18,6 +18,7 @@ cortensord:
   # Router WebSocket (miners connect here)
   # Set to the router's internal/private IP and port.
   WS_HOST_ROUTER: "192.168.250.237"
+  WS_PORT_ROUTER: 9001
   
   # Default Installer URL
   source_url: https://github.com/cortensor/installer.git
