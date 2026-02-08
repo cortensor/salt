@@ -49,10 +49,10 @@
             /bin/bash -lc 'set -euo pipefail
             source "{{ nodes_dir }}/{{ first_node }}/.env" || true
             IMAGES=({{ warmup_wait_for_images | join(" ") }})
-            if [ ${#IMAGES[@]} -eq 0 ] && [ -n "${LLM_CONTAINER_IMAGE:-}" ]; then
+            if [ -z "${IMAGES[*]}" ] && [ -n "${LLM_CONTAINER_IMAGE:-}" ]; then
               IMAGES=("$LLM_CONTAINER_IMAGE")
             fi
-            if [ ${#IMAGES[@]} -gt 0 ]; then
+            if [ -n "${IMAGES[*]}" ]; then
               for img in "${IMAGES[@]}"; do
                 echo "Waiting for Docker image: $img"
                 timeout {{ warmup_wait_timeout }} bash -lc "until docker image inspect \"$img\" >/dev/null 2>&1; do sleep 5; done"
