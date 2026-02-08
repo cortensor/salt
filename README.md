@@ -366,6 +366,13 @@ sudo salt 'miner-server-01' state.apply cortensord.upgrade
     sudo salt 'miner-server-01' cmd.run "systemctl list-units --type=service 'cortensord@*'"
     ```
 
+**Reset (Remove Nodes/Binary/Unit)**:
+This stops all instances, removes `/opt/cortensor/nodes`, the binary,
+and the systemd unit file.
+```bash
+sudo salt 'miner-server-01' state.apply cortensord.reset -l info
+```
+
 *   **Restart ONE instance across ALL servers** (e.g. if `node_router` is deployed everywhere):
     ```bash
     sudo salt '*' service.restart cortensord@node_router

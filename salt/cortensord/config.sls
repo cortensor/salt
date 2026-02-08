@@ -9,6 +9,7 @@
 
 include:
   - .install
+  - .unit
 
 # Create base directory for nodes
 {{ nodes_dir }}:
