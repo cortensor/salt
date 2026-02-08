@@ -27,3 +27,12 @@ cortensord:
   # Base URL for Docker repo (useful for mirrors or air-gapped environments)
   # Dynamic part (os/arch) will be appended by the state logic
   docker_base_url: "https://download.docker.com/linux"
+
+  # Warmup behavior
+  # Warmup is skipped by default; run a single instance manually to pull images,
+  # then apply `cortensord.warmup` to create the marker.
+  warmup_skip: true
+  # Optional: wait helpers if you enable warmup
+  # warmup_wait_seconds: 900
+  # warmup_wait_for_images:
+  #   - my-llm-image:latest

@@ -211,22 +211,28 @@ To install Cortensord and all dependencies (Docker, IPFS) on a new server for th
     ```
     **Note**: The service state requires the warmup marker file
     (`/var/lib/cortensor_warmup_done`), which is created by
-    `cortensord.warmup`. If you run pieces manually, make sure warmup
-    runs before `cortensord.service`.
+    `cortensord.warmup`. Warmup is skipped by default (`warmup_skip: true`)
+    and will only create the marker. If you run pieces manually, make sure
+    warmup (or the manual flow below) runs before `cortensord.service`.
 
     **Manual Warmup (Single Instance)**:
-    Use this if you want to start only one instance to pull Docker images,
-    then let the rest start later. By default `cortensord.warmup` starts the
-    first instance and can optionally wait before creating the warmup marker.
+    Warmup is **skipped by default** (`warmup_skip: true`). If you want to
+    pull Docker images once and then start the rest, run a single instance
+    manually and then create the warmup marker.
 
-    1. Start only the first instance:
+    1. Start only the first instance (from the minion):
        ```bash
        sudo systemctl stop 'cortensord@*'
        sudo systemctl start cortensord@miner-server-01-node-01
        sudo journalctl -u cortensord@miner-server-01-node-01 -f
        ```
-    2. When images are pulled, set a warmup skip flag and apply warmup
-       to create the marker:
+       Or from the master:
+       ```bash
+       sudo salt 'miner-server-01' service.stop 'cortensord@*'
+       sudo salt 'miner-server-01' service.start cortensord@miner-server-01-node-01
+       sudo salt 'miner-server-01' cmd.run "journalctl -u cortensord@miner-server-01-node-01 -f"
+       ```
+    2. When images are pulled, apply warmup to create the marker:
        ```yaml
        # pillar/cortensord/common.sls (or miner-specific pillar)
        cortensord:
@@ -239,6 +245,10 @@ To install Cortensord and all dependencies (Docker, IPFS) on a new server for th
        ```bash
        sudo salt 'miner-server-01' saltutil.refresh_pillar
        sudo salt 'miner-server-01' state.apply cortensord.warmup -l info
+       ```
+    3. Start the rest:
+       ```bash
+       sudo salt 'miner-server-01' service.start 'cortensord@*'
        ```
 
 ---
