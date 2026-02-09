@@ -13,6 +13,8 @@ cortensord_nodes:
     LLM_WORKER_PORT_PREFIX: 0
     LLM_WORKER_CONTAINER_NAME_PREFIX: ""
     ENABLE_DEDICATED_NODE: 1
+    # Dedicated nodes can pin a specific model image
+    LLM_CONTAINER_IMAGE: ""
     DEDICATED_NODE_AUTHORIZED_SESSIONS: "10,11,12"
 
   miner-server-dedicated-01-node-01:
