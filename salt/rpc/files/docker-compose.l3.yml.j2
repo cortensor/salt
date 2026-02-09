@@ -1,0 +1,42 @@
+services:
+  {{ cfg.get('container_name', 'testnet1a-rpc') }}:
+    container_name: {{ cfg.get('container_name', 'testnet1a-rpc') }}
+    image: {{ cfg.get('image', 'offchainlabs/nitro-node:v3.9.4-7f582c3') }}
+    user: "0:0"
+    restart: unless-stopped
+    stop_grace_period: 5m
+    command:
+      - --chain.id={{ cfg.get('chain_id', 18964747554) }}
+      - --chain.name={{ cfg.get('chain_name', 'COR-0') }}
+      - --parent-chain.connection.url={{ cfg.get('parent_http_url', 'http://arbitrum-sepolia-rpc:22557') }}
+      - >-
+        --chain.info-json={{ cfg.get('chain_info_json', '') }}
+      - --node.feed.input.url={{ cfg.get('feed_ws_url', 'wss://feed.testnet1a.cortensor.org') }}
+      - --execution.forwarding-target={{ cfg.get('sequencer_url', 'https://sequencer.testnet1a.cortensor.org') }}
+      - --node.data-availability.enable
+      - --node.data-availability.rest-aggregator.enable
+      - --node.data-availability.rest-aggregator.online-url-list={{ cfg.get('da_online_list', 'https://testnet1a-das-servers.cortensor.org') }}
+      - --http.api=net,web3,eth,debug
+      - --http.corsdomain=*
+      - --http.addr=0.0.0.0
+      - --http.vhosts=*
+      - --http.port={{ cfg.get('rpc_http_port', 10001) }}
+      - --ws.addr=0.0.0.0
+      - --ws.port={{ cfg.get('rpc_ws_port', 10002) }}
+      - --ws.origins=*
+    volumes:
+{% for vol in cfg.get('volumes', ['./testnet1a-rpc-data:/root/.arbitrum']) %}
+      - {{ vol }}
+{% endfor %}
+    ports:
+{% for p in cfg.get('ports', ["10001:10001", "10002:10002"]) %}
+      - "{{ p }}"
+{% endfor %}
+    networks:
+{% for net in cfg.get('networks', ['rpc']) %}
+      - {{ net }}
+{% endfor %}
+
+networks:
+  rpc:
+    external: true

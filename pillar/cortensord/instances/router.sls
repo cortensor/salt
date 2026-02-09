@@ -3,11 +3,6 @@
 # - Router-specific settings (external IP/port, REST, MCP, x402)
 
 cortensord_nodes:
-  miner-server-02-node-router:
-    NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
-    NODE_PRIVATE_KEY: "0xBBB...111"
-    AGENT_ROLE: routerv1
-
   router-server-01-node-router:
     NODE_PUBLIC_KEY: "0x0000000000000000000000000000000000000000"
     NODE_PRIVATE_KEY: "0xEEE...111"

@@ -87,4 +87,12 @@ include:
     - require:
       - file: {{ nodes_dir }}/{{ instance_name }}/{{ env_file_name }}
 
+{{ log_dir }}/cortensord-{{ instance_name }}.log:
+  file.touch:
+    - user: {{ user }}
+    - group: {{ group }}
+    - mode: 644
+    - require:
+      - file: {{ log_dir }}
+
 {% endfor %}

@@ -18,3 +18,15 @@ base:
 
   'miner-server-03':
     - cortensord.servers.miner-server-03
+
+  'miner-server-dedicated-01':
+    - cortensord.servers.miner-server-dedicated-01
+
+  'router-server-01':
+    - cortensord.servers.router-server-01
+
+  # RPC hosts (add your minion IDs here when you want Salt to manage RPC compose files)
+  # 'rpc-server-01':
+  #   - rpc.l1
+  #   - rpc.l2
+  #   - rpc.l3

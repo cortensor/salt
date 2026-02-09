@@ -1,0 +1,35 @@
+services:
+  {{ cfg.get('container_name', 'arbitrum-sepolia-rpc') }}:
+    container_name: {{ cfg.get('container_name', 'arbitrum-sepolia-rpc') }}
+    image: {{ cfg.get('image', 'offchainlabs/nitro-node:v3.9.3-8bc5554') }}
+    user: "0:0"
+    restart: unless-stopped
+    stop_grace_period: 5m
+    command:
+      - --chain.id={{ cfg.get('chain_id', 421614) }}
+      - --parent-chain.connection.url={{ cfg.get('parent_http_url', 'http://geth:8545') }}
+      - --parent-chain.blob-client.beacon-url={{ cfg.get('parent_beacon_url', 'http://prysm:3500') }}
+      - --http.api=net,web3,eth
+      - --http.corsdomain=*
+      - --http.addr=0.0.0.0
+      - --http.vhosts=*
+      - --http.port={{ cfg.get('rpc_http_port', 22557) }}
+      - --ws.addr=0.0.0.0
+      - --ws.port={{ cfg.get('rpc_ws_port', 22558) }}
+      - --ws.origins=*
+    volumes:
+{% for vol in cfg.get('volumes', ['./arbitrum-sepolia-rpc-data:/root/.arbitrum']) %}
+      - {{ vol }}
+{% endfor %}
+    ports:
+{% for p in cfg.get('ports', ["22557:22557", "22558:22558"]) %}
+      - "{{ p }}"
+{% endfor %}
+    networks:
+{% for net in cfg.get('networks', ['rpc']) %}
+      - {{ net }}
+{% endfor %}
+
+networks:
+  rpc:
+    external: true

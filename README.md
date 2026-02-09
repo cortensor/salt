@@ -118,9 +118,15 @@ For each new server you want to add to the cluster:
 
 The configuration is driven by **Pillar** data. You define global settings and per-instance overrides.
 
-File: `pillar/cortensord/instances/nodes.sls`
+File: `pillar/cortensord/instances/nodes.sls` (aggregator)
 
-Instances live under `pillar/cortensord/instances/` and server assignments live under `pillar/cortensord/servers/`.
+Instance definitions live under:
+- `pillar/cortensord/instances/ephemeral.sls`
+- `pillar/cortensord/instances/dedicated.sls`
+- `pillar/cortensord/instances/router.sls`
+
+`pillar/cortensord/instances/nodes.sls` includes these type files and documents available variables.
+Server assignments live under `pillar/cortensord/servers/`.
 
 ### 3.1 Basic Structure
 Define generic defaults at the top level, and specific instances under `instances/` by type.
@@ -133,6 +139,7 @@ Define generic defaults at the top level, and specific instances under `instance
 **Router vs Miner WebSocket Settings**:
 - Miners use `WS_HOST_ROUTER` / `WS_PORT_ROUTER` to connect to the router’s internal address (defaults in `pillar/cortensord/common.sls`).
 - Router advertises its public endpoint via `ROUTER_EXTERNAL_IP` / `ROUTER_EXTERNAL_PORT`.
+- Router nodes do not use `WS_*` values; keep the defaults for miners unless you have a custom internal network.
 
 ```yaml
 # Instances are grouped by type:
@@ -200,7 +207,7 @@ cortensord_nodes:
 ```
 
 ### 3.2 Targeting Specific Minions
-If you have multiple physical servers (Minions), you use the `cortensord_assigned_nodes` list in each server's pillar file (`pillar/cortensord/servers/miner-server-01.sls`, `pillar/cortensord/servers/miner-server-02.sls`, `pillar/cortensord/servers/miner-server-03.sls`). For a dedicated-only host example, see `pillar/cortensord/servers/miner-server-dedicated-01.sls`.
+If you have multiple physical servers (Minions), you use the `cortensord_assigned_nodes` list in each server's pillar file (`pillar/cortensord/servers/miner-server-01.sls`, `pillar/cortensord/servers/miner-server-02.sls`, `pillar/cortensord/servers/miner-server-03.sls`). For a dedicated-only host example, see `pillar/cortensord/servers/miner-server-dedicated-01.sls`. For a router-only host example, see `pillar/cortensord/servers/router-server-01.sls`.
 
 ### 3.3 Configuration Hierarchy (Global, Server, Instance)
 
@@ -342,6 +349,8 @@ sudo salt 'miner-server-01' state.apply cortensord.upgrade
 The upgrade state stops all assigned instances, updates the binary, and starts them again.
 
 **Service Management**:
+There is no single `cortensord` service; all instances are systemd template units
+named `cortensord@<instance>`.
 
 *   **Restart ONE specific instance on ONE server**:
     ```bash
@@ -354,9 +363,9 @@ The upgrade state stops all assigned instances, updates the binary, and starts t
     sudo salt 'miner-server-01' service.stop cortensord@miner-server-01-node-01
     ```
 
-*   **Restart ALL instances on ONE server**:
+*   **Restart ALL instances on ONE server** (template units):
     ```bash
-    sudo salt 'miner-server-01' service.restart 'cortensord@*'
+    sudo salt 'miner-server-01' cmd.run "systemctl restart 'cortensord@*'"
     ```
 
 *   **Stop ALL instances on ONE server** (template units):
@@ -402,6 +411,11 @@ ps agx | grep cortensord
 ```
 
 **Common Errors**:
+
+*   **`service.stop cortensord` returns True but nothing stops**
+    There is no non-templated `cortensord` service. Use
+    `service.stop cortensord@<instance>` or
+    `cmd.run "systemctl stop 'cortensord@*'"`.
 
 *   **"Minion did not return. [No response]"**
     This means the Master timed out waiting for the Minion, but the job might still be running.
@@ -487,3 +501,9 @@ If you decommission a server or need to re-key it:
     # Press 'y' to confirm
     ```
     *This revokes the server's access. It will need to re-register to connect again.*
+
+## 5. RPC (L1/L2/L3)
+
+RPC docs are now in a separate file to keep this README short.
+
+See `/Users/j/repos/base/corsalt/README_RPC.md`.
